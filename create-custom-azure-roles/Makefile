@@ -25,10 +25,6 @@ check-assignee-assignment: ## Check if the assignee has Owner or User Access Adm
 	@az role assignment list --assignee $(ASSIGNEE) --subscription $(SUBSCRIPTION_ID) -o table
 	@echo "Hope you see Owner or User Access Administrator access for assignee..."
 
-# Complete role setup workflow
-.PHONY: create-all-roles
-create-all-roles: create-roles-dir create-role-files replace-subscription-id create-roles ## Create all custom Azure roles for GENI JHipster
-
 # Create custom Azure roles
 .PHONY: create-roles
 create-roles: ## Create custom Azure roles from definition files
@@ -54,7 +50,8 @@ create-roles: ## Create custom Azure roles from definition files
 .PHONY: list-roles
 list-roles: ## List custom Azure roles for GENI JHipster
 	@echo "📋 Listing custom Azure roles..."
-	@az role definition list --custom-role-only true --query '[?contains(name, `GENI`)].{Name:name, Description:description}' -o table || echo "❌ No custom roles found or error occurred"
+	@az role definition list --custom-role-only true -o table | head -1  # Header
+	@az role definition list --custom-role-only true -o table | grep "GENI"
 
 # Delete custom Azure roles
 .PHONY: delete-roles

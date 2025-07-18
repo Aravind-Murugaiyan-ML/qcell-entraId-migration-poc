@@ -41,6 +41,13 @@ show-config: ## Display current configuration values
 .PHONY: all
 all: login set-subscription create-resource-groups create-app-registration create-service-principal create-client-secret save-env ## Run complete Azure infrastructure setup
 
+# Force Login to Azure
+.PHONY: force-login
+force-login: ## Force Login to Azure CLI using device code to switch to the required subscription
+	@echo "🔧 Logging in to switch to the required subscription..."
+	@echo "🔧 Make sure you are changing the subscription context to environment variables"
+	@az login --use-device-code;
+
 # Login to Azure
 .PHONY: login
 login: ## Login to Azure CLI using device code if no session exists
