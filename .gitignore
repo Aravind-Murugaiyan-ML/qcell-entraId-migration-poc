@@ -4,3 +4,4 @@ create-custom-azure-roles/azure-roles/geni-admin-role.json
 create-custom-azure-roles/azure-roles/geni-operator-role.json
 create-custom-azure-roles/azure-roles/geni-site-manager-role.json
 setup-azure-infra/.env-az-infra
+create-custom-azure-roles/.env-az-roles
