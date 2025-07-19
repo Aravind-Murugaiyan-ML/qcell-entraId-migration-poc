@@ -73,10 +73,3 @@ delete-roles: ## Delete custom Azure roles for GENI JHipster
 		fi; \
 	done
 	@echo "✅ Completed deleting custom Azure roles"
-
-# Clean up role definition files
-.PHONY: clean-roles
-clean-roles: ## Remove role definition files and directory
-	@echo "🧹 Cleaning up role definition files..."
-	@rm -rf $(ROLES_DIR)
-	@echo "✅ Role definition files and directory removed"

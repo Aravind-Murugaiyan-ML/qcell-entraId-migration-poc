@@ -10,3 +10,8 @@ create-security-groups/.env
 create-test-users/.dontCheck-in
 detail-permissions/Makefile
 create-test-users/backup/Multiuser.Makefile.backup
+create-custom-azure-roles/forceDelteRoles.sh
+detail-permissions/debugRoleAssignement.sh
+detail-permissions/fixRoleAssignmentScopes.sh
+detail-permissions/setup-my-roles.sh
+detail-permissions/verifyRolesAndGroups.sh

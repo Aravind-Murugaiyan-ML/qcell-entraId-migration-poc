@@ -10,6 +10,10 @@ ADMIN_UPN = murugaiyan_a@xoriant.com
 MANAGER_UPN = murugaiyan_a@xoriant.com  # Same user with different role
 OPERATOR_UPN = murugaiyan_a@xoriant.com  # Same user with different role
 
+GENI_ADMIN_ROLE ?= GENI Administrator
+GENI_MANAGER_ROLE ?= GENI Site Manager
+GENI_OPERATOR_ROLE ?= GENI Operator
+
 # Security Groups
 ADMIN_GROUP = GENI-Administrators
 MANAGER_GROUP = GENI-Site-Managers
@@ -69,40 +73,106 @@ check-user-permissions: set-subscription ## Check current user's permissions
 	@echo "Azure subscription roles:"
 	@az role assignment list --assignee $(ADMIN_UPN) --query "[].{Role:roleDefinitionName, Scope:scope}" -o table
 
-.PHONY: create-groups-safe
-create-groups-safe: set-subscription ## Create security groups (if you have permission)
-	@echo "$(BLUE)👥 Attempting to create security groups...$(NC)"
-	@for group in "$(ADMIN_GROUP)" "$(MANAGER_GROUP)" "$(OPERATOR_GROUP)"; do \
-		if az ad group show --group "$$group" >/dev/null 2>&1; then \
-			echo "$(GREEN)✅ Group $$group already exists$(NC)"; \
-		else \
-			echo "🔧 Attempting to create group $$group..."; \
-			MAIL_NICKNAME=$$(echo "$$group" | tr '[:upper:]' '[:lower:]' | tr '-' ''); \
-			az ad group create --display-name "$$group" --mail-nickname "$$MAIL_NICKNAME" >/dev/null 2>&1; \
-			if [ $$? -eq 0 ]; then \
-				echo "$(GREEN)✅ Created group $$group$(NC)"; \
-			else \
-				echo "$(YELLOW)⚠️  Could not create group $$group (permission denied)$(NC)"; \
-			fi; \
-		fi; \
-	done
-
-.PHONY: assign-self-to-groups
-assign-self-to-groups: create-groups-safe ## Assign yourself to groups (if possible)
-	@echo "$(BLUE)👥 Attempting to assign yourself to groups...$(NC)"
+# Target to unassign GENI role assignments
+.PHONY: unassign-geni-roles
+unassign-geni-roles: ## Remove all GENI role assignments from current user
+	@echo "$(BLUE)🎭 Attempting to unassign GENI roles...$(NC)"
 	@USER_ID=$$(az ad user show --id "$(ADMIN_UPN)" --query id -o tsv 2>/dev/null); \
+	SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
 	if [ -n "$$USER_ID" ]; then \
-		for group in "$(ADMIN_GROUP)" "$(MANAGER_GROUP)" "$(OPERATOR_GROUP)"; do \
-			echo "Adding yourself to $$group..."; \
-			az ad group member add --group "$$group" --member-id "$$USER_ID" >/dev/null 2>&1; \
-			if [ $$? -eq 0 ]; then \
-				echo "$(GREEN)✅ Added to $$group$(NC)"; \
+		echo "$(BLUE)👤 User: $(ADMIN_UPN) ($$USER_ID)$(NC)"; \
+		echo "$(BLUE)📋 Subscription: $$SUBSCRIPTION_ID$(NC)"; \
+		echo ""; \
+		for role in "$(GENI_ADMIN_ROLE)" "$(GENI_MANAGER_ROLE)" "$(GENI_OPERATOR_ROLE)"; do \
+			echo "Removing role assignment: $$role..."; \
+			EXISTING_ASSIGNMENT=$$(az role assignment list --assignee "$$USER_ID" --role "$$role" --subscription "$$SUBSCRIPTION_ID" --query '[0].id' -o tsv 2>/dev/null); \
+			if [ -n "$$EXISTING_ASSIGNMENT" ]; then \
+				az role assignment delete --assignee "$$USER_ID" --role "$$role" --scope "/subscriptions/$$SUBSCRIPTION_ID" >/dev/null 2>&1; \
+				if [ $$? -eq 0 ]; then \
+					echo "$(GREEN)✅ Removed $$role$(NC)"; \
+				else \
+					echo "$(RED)❌ Failed to remove $$role$(NC)"; \
+				fi; \
 			else \
-				echo "$(YELLOW)⚠️  Could not add to $$group$(NC)"; \
+				echo "$(YELLOW)⚠️  $$role not assigned$(NC)"; \
 			fi; \
 		done; \
 	else \
 		echo "$(RED)❌ Could not get your user ID$(NC)"; \
+	fi
+
+# Target to unassign role assignments at resource group level
+.PHONY: unassign-geni-roles-rg
+unassign-geni-roles-rg: ## Remove GENI role assignments from resource group scope
+	@echo "$(BLUE)🎭 Attempting to unassign GENI roles from resource group...$(NC)"
+	@USER_ID=$$(az ad user show --id "$(ADMIN_UPN)" --query id -o tsv 2>/dev/null); \
+	SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
+	RESOURCE_GROUP=$$(az group list --query "[?contains(name, 'geni')].name | [0]" -o tsv); \
+	if [ -n "$$USER_ID" ] && [ -n "$$RESOURCE_GROUP" ]; then \
+		SCOPE="/subscriptions/$$SUBSCRIPTION_ID/resourceGroups/$$RESOURCE_GROUP"; \
+		echo "$(BLUE)👤 User: $(ADMIN_UPN) ($$USER_ID)$(NC)"; \
+		echo "$(BLUE)🎯 Scope: $$SCOPE$(NC)"; \
+		echo ""; \
+		for role in "$(GENI_ADMIN_ROLE)" "$(GENI_MANAGER_ROLE)" "$(GENI_OPERATOR_ROLE)"; do \
+			echo "Removing role assignment: $$role..."; \
+			EXISTING_ASSIGNMENT=$$(az role assignment list --assignee "$$USER_ID" --role "$$role" --scope "$$SCOPE" --query '[0].id' -o tsv 2>/dev/null); \
+			if [ -n "$$EXISTING_ASSIGNMENT" ]; then \
+				az role assignment delete --assignee "$$USER_ID" --role "$$role" --scope "$$SCOPE" >/dev/null 2>&1; \
+				if [ $$? -eq 0 ]; then \
+					echo "$(GREEN)✅ Removed $$role$(NC)"; \
+				else \
+					echo "$(RED)❌ Failed to remove $$role$(NC)"; \
+				fi; \
+			else \
+				echo "$(YELLOW)⚠️  $$role not assigned$(NC)"; \
+			fi; \
+		done; \
+	else \
+		echo "$(RED)❌ Could not get user ID or resource group$(NC)"; \
+	fi
+
+# Target to check current GENI role assignments
+.PHONY: check-geni-roles
+check-geni-roles: ## Check current GENI role assignments
+	@echo "$(BLUE)🔍 Checking current GENI role assignments...$(NC)"
+	@USER_ID=$$(az ad user show --id "$(ADMIN_UPN)" --query id -o tsv 2>/dev/null); \
+	SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
+	if [ -n "$$USER_ID" ]; then \
+		echo "$(BLUE)👤 User: $(ADMIN_UPN) ($$USER_ID)$(NC)"; \
+		echo "$(BLUE)📋 Subscription: $$SUBSCRIPTION_ID$(NC)"; \
+		echo ""; \
+		echo "GENI role assignments:"; \
+		GENI_ASSIGNMENTS=$$(az role assignment list --assignee "$$USER_ID" --subscription "$$SUBSCRIPTION_ID" --query "[?contains(roleDefinitionName, 'GENI')].{Role:roleDefinitionName, Scope:scope}" -o table); \
+		if [ -n "$$GENI_ASSIGNMENTS" ]; then \
+			echo "$$GENI_ASSIGNMENTS"; \
+		else \
+			echo "$(YELLOW)⚠️  No GENI role assignments found$(NC)"; \
+		fi; \
+		echo ""; \
+		echo "All role assignments:"; \
+		az role assignment list --assignee "$$USER_ID" --subscription "$$SUBSCRIPTION_ID" --query '[].{Role:roleDefinitionName, Scope:scope}' -o table; \
+	else \
+		echo "$(RED)❌ Could not get your user ID$(NC)"; \
+	fi
+
+# Target to reassign GENI roles after unassigning
+.PHONY: reassign-geni-roles
+reassign-geni-roles: unassign-geni-roles ## Unassign and then reassign GENI roles
+	@echo "$(BLUE)⏳ Waiting 5 seconds for unassignment to propagate...$(NC)"
+	@sleep 5
+	@echo "$(BLUE)🎭 Reassigning GENI roles...$(NC)"
+	@USER_ID=$$(az ad user show --id "$(ADMIN_UPN)" --query id -o tsv 2>/dev/null); \
+	SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
+	if [ -n "$$USER_ID" ]; then \
+		for role in "$(GENI_ADMIN_ROLE)" "$(GENI_MANAGER_ROLE)" "$(GENI_OPERATOR_ROLE)"; do \
+			echo "Assigning: $$role..."; \
+			az role assignment create --assignee "$$USER_ID" --role "$$role" --scope "/subscriptions/$$SUBSCRIPTION_ID" >/dev/null 2>&1; \
+			if [ $$? -eq 0 ]; then \
+				echo "$(GREEN)✅ Assigned $$role$(NC)"; \
+			else \
+				echo "$(RED)❌ Failed to assign $$role$(NC)"; \
+			fi; \
+		done; \
 	fi
 
 .PHONY: create-resource-group
@@ -141,22 +211,6 @@ create-app-registration: set-subscription ## Create Azure AD app registration
 			echo "$(YELLOW)⚠️  Could not create app registration (permission denied)$(NC)"; \
 		fi; \
 	fi
-
-.PHONY: setup-what-i-can
-setup-what-i-can: create-resource-group create-app-registration create-groups-safe assign-self-to-groups ## Setup what's possible with current permissions
-	@echo ""
-	@echo "$(GREEN)🎉 Setup completed with available permissions!$(NC)"
-	@echo ""
-	@echo "$(BLUE)What was configured:$(NC)"
-	@echo "  Resource Group: $(RESOURCE_GROUP)"
-	@echo "  User (Admin/Manager/Operator): $(ADMIN_UPN)"
-	@echo "  Security Groups: Attempted creation"
-	@echo "  App Registration: Attempted creation"
-	@echo ""
-	@echo "$(YELLOW)⚠️  For full setup, you'll need:$(NC)"
-	@echo "  - User Administrator role in Azure AD"
-	@echo "  - Groups Administrator role in Azure AD"
-	@echo "  - Application Administrator role in Azure AD"
 
 .PHONY: continue-development
 continue-development: ## Continue with JHipster development using current setup
