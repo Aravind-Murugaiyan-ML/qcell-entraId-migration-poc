@@ -7,3 +7,6 @@ setup-azure-infra/.env-az-infra
 create-custom-azure-roles/.env-az-roles
 create-security-groups/.env-az-security-groups
 create-security-groups/.env
+create-test-users/.dontCheck-in
+detail-permissions/Makefile
+create-test-users/backup/Multiuser.Makefile.backup
