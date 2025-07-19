@@ -197,6 +197,89 @@ create-client-secret: create-service-principal ## Generate client secret for aut
 	export CLIENT_SECRET=$$CLIENT_SECRET; \
 	export APP_ID=$$APP_ID
 
+# Update app registration configuration
+.PHONY: update-app-config
+update-app-config: ## Update app registration with group claims and localhost redirect URIs
+	@echo "🔧 Updating app registration configuration..."
+	@APP_ID=$$(az ad app list --display-name "$(APP_NAME)" --query '[0].appId' -o tsv 2>/dev/null); \
+	if [ -z "$$APP_ID" ]; then \
+		echo "❌ Error: No app registration found with display name '$(APP_NAME)'"; \
+		exit 1; \
+	else \
+		echo "📋 Found App Registration with App ID: $$APP_ID"; \
+		echo "🔧 Updating groupMembershipClaims to SecurityGroup..."; \
+		az ad app update --id $$APP_ID --set groupMembershipClaims=SecurityGroup; \
+		if [ $$? -eq 0 ]; then \
+			echo "✅ Successfully updated groupMembershipClaims"; \
+		else \
+			echo "❌ Failed to update groupMembershipClaims"; \
+			exit 1; \
+		fi; \
+		echo "🔧 Updating redirect URIs for localhost development..."; \
+		az ad app update --id $$APP_ID \
+			--web-redirect-uris "http://localhost:8080/login/oauth2/code/oidc" "https://localhost:8080/login/oauth2/code/oidc"; \
+		if [ $$? -eq 0 ]; then \
+			echo "✅ Successfully updated redirect URIs"; \
+		else \
+			echo "❌ Failed to update redirect URIs"; \
+			exit 1; \
+		fi; \
+		echo ""; \
+		echo "🔍 Verifying configuration..."; \
+		echo "Group Membership Claims:"; \
+		az ad app show --id $$APP_ID --query "groupMembershipClaims" -o tsv; \
+		echo ""; \
+		echo "Redirect URIs:"; \
+		az ad app show --id $$APP_ID --query "web.redirectUris" -o table; \
+		echo "✅ App registration configuration updated successfully!"; \
+	fi
+
+# Show current app configuration
+.PHONY: show-app-config
+show-app-config: ## Display current app registration configuration
+	@echo "🔍 Current app registration configuration..."
+	@APP_ID=$$(az ad app list --display-name "$(APP_NAME)" --query '[0].appId' -o tsv 2>/dev/null); \
+	if [ -z "$$APP_ID" ]; then \
+		echo "❌ Error: No app registration found with display name '$(APP_NAME)'"; \
+		exit 1; \
+	else \
+		echo "📋 App Registration: $(APP_NAME)"; \
+		echo "📋 App ID: $$APP_ID"; \
+		echo ""; \
+		echo "Group Membership Claims:"; \
+		az ad app show --id $$APP_ID --query "groupMembershipClaims" -o tsv || echo "Not set"; \
+		echo ""; \
+		echo "Redirect URIs:"; \
+		az ad app show --id $$APP_ID --query "web.redirectUris" -o table || echo "None configured"; \
+		echo ""; \
+		echo "Required Resource Access:"; \
+		az ad app show --id $$APP_ID --query "requiredResourceAccess[].resourceAppId" -o table || echo "None configured"; \
+	fi
+
+# Reset app configuration to production URIs
+.PHONY: reset-app-config
+reset-app-config: ## Reset app registration to production redirect URIs
+	@echo "🔧 Resetting app registration to production configuration..."
+	@APP_ID=$$(az ad app list --display-name "$(APP_NAME)" --query '[0].appId' -o tsv 2>/dev/null); \
+	if [ -z "$$APP_ID" ]; then \
+		echo "❌ Error: No app registration found with display name '$(APP_NAME)'"; \
+		exit 1; \
+	else \
+		echo "📋 Found App Registration with App ID: $$APP_ID"; \
+		echo "🔧 Resetting redirect URIs to production values..."; \
+		az ad app update --id $$APP_ID \
+			--web-redirect-uris $(REDIRECT_URIS); \
+		if [ $$? -eq 0 ]; then \
+			echo "✅ Successfully reset redirect URIs to production"; \
+			echo ""; \
+			echo "🔍 Current redirect URIs:"; \
+			az ad app show --id $$APP_ID --query "web.redirectUris" -o table; \
+		else \
+			echo "❌ Failed to reset redirect URIs"; \
+			exit 1; \
+		fi; \
+	fi
+
 # Save to environment file
 .PHONY: save-env
 save-env: create-client-secret ## Save Azure configuration to .env file

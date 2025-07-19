@@ -80,14 +80,16 @@ unassign-geni-roles: ## Remove all GENI role assignments from current user
 	@USER_ID=$$(az ad user show --id "$(ADMIN_UPN)" --query id -o tsv 2>/dev/null); \
 	SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
 	if [ -n "$$USER_ID" ]; then \
+		SCOPE="/subscriptions/$$SUBSCRIPTION_ID"; \
 		echo "$(BLUE)👤 User: $(ADMIN_UPN) ($$USER_ID)$(NC)"; \
 		echo "$(BLUE)📋 Subscription: $$SUBSCRIPTION_ID$(NC)"; \
+		echo "$(BLUE)🎯 Scope: $$SCOPE$(NC)"; \
 		echo ""; \
 		for role in "$(GENI_ADMIN_ROLE)" "$(GENI_MANAGER_ROLE)" "$(GENI_OPERATOR_ROLE)"; do \
 			echo "Removing role assignment: $$role..."; \
 			EXISTING_ASSIGNMENT=$$(az role assignment list --assignee "$$USER_ID" --role "$$role" --subscription "$$SUBSCRIPTION_ID" --query '[0].id' -o tsv 2>/dev/null); \
 			if [ -n "$$EXISTING_ASSIGNMENT" ]; then \
-				az role assignment delete --assignee "$$USER_ID" --role "$$role" --scope "/subscriptions/$$SUBSCRIPTION_ID" >/dev/null 2>&1; \
+				az role assignment delete --assignee "$$USER_ID" --role "$$role" --scope "$$SCOPE" >/dev/null 2>&1; \
 				if [ $$? -eq 0 ]; then \
 					echo "$(GREEN)✅ Removed $$role$(NC)"; \
 				else \
