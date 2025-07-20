@@ -1,0 +1,10 @@
+{
+  "genigatewayApp": {
+    "SecurityResult": {
+      "null": "",
+      "SUCCESS": "SUCCESS",
+      "FAILURE": "FAILURE",
+      "DENIED": "DENIED"
+    }
+  }
+}

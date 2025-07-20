@@ -1,0 +1,170 @@
+<div>
+  <h2 id="page-heading" data-cy="SecurityAuditLogHeading">
+    <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.home.title"
+      >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.home.title</span
+    >
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading">
+        <fa-icon icon="sync" [spin]="isLoading"></fa-icon>
+        <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.home.refreshListLabel"
+          >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.home.refreshListLabel</span
+        >
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-security-audit-log"
+        [routerLink]="['/security-audit-log/new']"
+      >
+        <fa-icon icon="plus"></fa-icon>
+        <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.home.createLabel"
+          >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.home.createLabel</span
+        >
+      </button>
+    </div>
+  </h2>
+
+  <geni-alert-error></geni-alert-error>
+
+  <geni-alert></geni-alert>
+
+  <div class="alert alert-warning" id="no-result" *ngIf="securityAuditLogs?.length === 0">
+    <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.home.notFound"
+      >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.home.notFound</span
+    >
+  </div>
+
+  <div class="table-responsive table-entities" id="entities" *ngIf="securityAuditLogs && securityAuditLogs.length > 0">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr geniSort [(predicate)]="predicate" [(ascending)]="ascending" (sortChange)="navigateToWithComponentValues()">
+          <th scope="col" geniSortBy="id">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.id"
+                >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.id</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="userId">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.userId"
+                >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.userId</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="eventType">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.eventType"
+                >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.eventType</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="resourceType">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.resourceType"
+                >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.resourceType</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="resourceId">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.resourceId"
+                >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.resourceId</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="action">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.action"
+                >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.action</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="result">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.result"
+                >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.result</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="timestamp">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.timestamp"
+                >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.timestamp</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let securityAuditLog of securityAuditLogs; trackBy: trackId" data-cy="entityTable">
+          <td>
+            <a [routerLink]="['/security-audit-log', securityAuditLog.id, 'view']">{{ securityAuditLog.id }}</a>
+          </td>
+          <td>{{ securityAuditLog.userId }}</td>
+          <td geniTranslate="{{ 'genigatewayApp.SecurityEventType.' + securityAuditLog.eventType }}">{{ securityAuditLog.eventType }}</td>
+          <td>{{ securityAuditLog.resourceType }}</td>
+          <td>{{ securityAuditLog.resourceId }}</td>
+          <td>{{ securityAuditLog.action }}</td>
+          <td geniTranslate="{{ 'genigatewayApp.SecurityResult.' + securityAuditLog.result }}">{{ securityAuditLog.result }}</td>
+          <td>{{ securityAuditLog.timestamp | formatMediumDatetime }}</td>
+          <td class="text-end">
+            <div class="btn-group">
+              <a
+                [routerLink]="['/security-audit-log', securityAuditLog.id, 'view']"
+                class="btn btn-info btn-sm"
+                data-cy="entityDetailsButton"
+              >
+                <fa-icon icon="eye"></fa-icon>
+                <span class="d-none d-md-inline" geniTranslate="entity.action.view">View</span>
+              </a>
+
+              <a
+                [routerLink]="['/security-audit-log', securityAuditLog.id, 'edit']"
+                class="btn btn-primary btn-sm"
+                data-cy="entityEditButton"
+              >
+                <fa-icon icon="pencil-alt"></fa-icon>
+                <span class="d-none d-md-inline" geniTranslate="entity.action.edit">Edit</span>
+              </a>
+
+              <button type="submit" (click)="delete(securityAuditLog)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times"></fa-icon>
+                <span class="d-none d-md-inline" geniTranslate="entity.action.delete">Delete</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="securityAuditLogs && securityAuditLogs.length > 0">
+    <div class="d-flex justify-content-center">
+      <geni-item-count [params]="{ page: page, totalItems: totalItems, itemsPerPage: itemsPerPage }"></geni-item-count>
+    </div>
+
+    <div class="d-flex justify-content-center">
+      <ngb-pagination
+        [collectionSize]="totalItems"
+        [page]="page"
+        [pageSize]="itemsPerPage"
+        [maxSize]="5"
+        [rotate]="true"
+        [boundaryLinks]="true"
+        (pageChange)="navigateToPage($event)"
+      ></ngb-pagination>
+    </div>
+  </div>
+</div>

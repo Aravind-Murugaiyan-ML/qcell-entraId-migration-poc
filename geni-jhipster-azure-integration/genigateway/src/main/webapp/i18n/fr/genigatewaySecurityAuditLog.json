@@ -1,0 +1,34 @@
+{
+  "genigatewayApp": {
+    "genigatewaySecurityAuditLog": {
+      "home": {
+        "title": "SecurityAuditLogs",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Security Audit Log",
+        "createOrEditLabel": "Créer ou éditer un Security Audit Log",
+        "notFound": "Aucun Security Audit Log trouvé"
+      },
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Security Audit Log {{ id }} ?"
+      },
+      "detail": {
+        "title": "Security Audit Log"
+      },
+      "id": "Id",
+      "userId": "User Id",
+      "eventType": "Event Type",
+      "resourceType": "Resource Type",
+      "resourceId": "Resource Id",
+      "action": "Action",
+      "result": "Result",
+      "timestamp": "Timestamp"
+    }
+  },
+  "genigatewayApp": {
+    "genigatewaySecurityAuditLog": {
+      "created": "Un nouveau Security Audit Log a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Security Audit Log avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Security Audit Log avec l'identifiant {{ param }} a été supprimé"
+    }
+  }
+}

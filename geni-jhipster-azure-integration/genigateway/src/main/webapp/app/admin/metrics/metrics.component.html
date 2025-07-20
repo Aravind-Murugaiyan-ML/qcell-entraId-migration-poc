@@ -1,0 +1,51 @@
+<div>
+  <h2>
+    <span id="metrics-page-heading" geniTranslate="metrics.title" data-cy="metricsPageHeading">Application Metrics</span>
+
+    <button class="btn btn-primary float-end" (click)="refresh()">
+      <fa-icon icon="sync"></fa-icon> <span geniTranslate="metrics.refresh.button">Refresh</span>
+    </button>
+  </h2>
+
+  <h3 geniTranslate="metrics.jvm.title">JVM Metrics</h3>
+
+  <div class="row" *ngIf="metrics && !updatingMetrics">
+    <geni-jvm-memory class="col-md-4" [updating]="updatingMetrics" [jvmMemoryMetrics]="metrics.jvm"></geni-jvm-memory>
+
+    <geni-jvm-threads class="col-md-4" [threads]="threads"></geni-jvm-threads>
+
+    <geni-metrics-system class="col-md-4" [updating]="updatingMetrics" [systemMetrics]="metrics.processMetrics"></geni-metrics-system>
+  </div>
+
+  <geni-metrics-garbagecollector
+    *ngIf="metrics && metricsKeyExists('garbageCollector')"
+    [updating]="updatingMetrics"
+    [garbageCollectorMetrics]="metrics.garbageCollector"
+  ></geni-metrics-garbagecollector>
+
+  <div class="well well-lg" *ngIf="updatingMetrics" geniTranslate="metrics.updating">Updating...</div>
+
+  <geni-metrics-request
+    *ngIf="metrics && metricsKeyExists('http.server.requests')"
+    [updating]="updatingMetrics"
+    [requestMetrics]="metrics['http.server.requests']"
+  ></geni-metrics-request>
+
+  <geni-metrics-endpoints-requests
+    *ngIf="metrics && metricsKeyExists('services')"
+    [updating]="updatingMetrics"
+    [endpointsRequestsMetrics]="metrics.services"
+  ></geni-metrics-endpoints-requests>
+
+  <geni-metrics-cache
+    *ngIf="metrics && metricsKeyExists('cache')"
+    [updating]="updatingMetrics"
+    [cacheMetrics]="metrics.cache"
+  ></geni-metrics-cache>
+
+  <geni-metrics-datasource
+    *ngIf="metrics && metricsKeyExistsAndObjectNotEmpty('databases')"
+    [updating]="updatingMetrics"
+    [datasourceMetrics]="metrics.databases"
+  ></geni-metrics-datasource>
+</div>

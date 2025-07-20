@@ -1,0 +1,94 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <div *ngIf="securityAuditLog">
+      <h2 data-cy="securityAuditLogDetailsHeading">
+        <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.detail.title"
+          >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.detail.title</span
+        >
+      </h2>
+
+      <hr />
+
+      <geni-alert-error></geni-alert-error>
+
+      <geni-alert></geni-alert>
+
+      <dl class="row-md jh-entity-details">
+        <dt>
+          <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.id"
+            >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.id</span
+          >
+        </dt>
+        <dd>
+          <span>{{ securityAuditLog.id }}</span>
+        </dd>
+        <dt>
+          <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.userId"
+            >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.userId</span
+          >
+        </dt>
+        <dd>
+          <span>{{ securityAuditLog.userId }}</span>
+        </dd>
+        <dt>
+          <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.eventType"
+            >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.eventType</span
+          >
+        </dt>
+        <dd>
+          <span geniTranslate="{{ 'genigatewayApp.SecurityEventType.' + securityAuditLog.eventType }}">{{
+            securityAuditLog.eventType
+          }}</span>
+        </dd>
+        <dt>
+          <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.resourceType"
+            >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.resourceType</span
+          >
+        </dt>
+        <dd>
+          <span>{{ securityAuditLog.resourceType }}</span>
+        </dd>
+        <dt>
+          <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.resourceId"
+            >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.resourceId</span
+          >
+        </dt>
+        <dd>
+          <span>{{ securityAuditLog.resourceId }}</span>
+        </dd>
+        <dt>
+          <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.action"
+            >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.action</span
+          >
+        </dt>
+        <dd>
+          <span>{{ securityAuditLog.action }}</span>
+        </dd>
+        <dt>
+          <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.result"
+            >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.result</span
+          >
+        </dt>
+        <dd>
+          <span geniTranslate="{{ 'genigatewayApp.SecurityResult.' + securityAuditLog.result }}">{{ securityAuditLog.result }}</span>
+        </dd>
+        <dt>
+          <span geniTranslate="genigatewayApp.genigatewaySecurityAuditLog.timestamp"
+            >Translation missing for genigatewayApp.genigatewaySecurityAuditLog.timestamp</span
+          >
+        </dt>
+        <dd>
+          <span>{{ securityAuditLog.timestamp | formatMediumDatetime }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span geniTranslate="entity.action.back">Back</span>
+      </button>
+
+      <button type="button" [routerLink]="['/security-audit-log', securityAuditLog.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span geniTranslate="entity.action.edit">Edit</span>
+      </button>
+    </div>
+  </div>
+</div>

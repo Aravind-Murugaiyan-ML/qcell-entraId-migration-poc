@@ -1,0 +1,27 @@
+{
+  "genigatewayApp": {
+    "genigatewaySecurityAuditLog": {
+      "home": {
+        "title": "Security Audit Logs",
+        "refreshListLabel": "Refresh list",
+        "createLabel": "Create new Security Audit Log",
+        "createOrEditLabel": "Create or edit Security Audit Log",
+        "notFound": "No Security Audit Logs found"
+      },
+      "detail": {
+        "title": "Security Audit Log"
+      },
+      "delete": {
+        "question": "Are you sure you want to delete Security Audit Log {{ id }}?"
+      },
+      "id": "ID",
+      "userId": "User ID",
+      "eventType": "Event Type",
+      "resourceType": "Resource Type",
+      "resourceId": "Resource ID",
+      "action": "Action",
+      "result": "Result",
+      "timestamp": "Timestamp"
+    }
+  }
+}

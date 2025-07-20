@@ -1,0 +1,9 @@
+export enum SecurityEventType {
+  LOGIN = 'LOGIN',
+
+  LOGOUT = 'LOGOUT',
+
+  PERMISSION_CHECK = 'PERMISSION_CHECK',
+
+  DATA_ACCESS = 'DATA_ACCESS',
+}

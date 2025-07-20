@@ -1,0 +1,217 @@
+<div>
+  <h2 id="page-heading" data-cy="AzureUserMappingHeading">
+    <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.home.title"
+      >Translation missing for genigatewayApp.genigatewayAzureUserMapping.home.title</span
+    >
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading">
+        <fa-icon icon="sync" [spin]="isLoading"></fa-icon>
+        <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.home.refreshListLabel"
+          >Translation missing for genigatewayApp.genigatewayAzureUserMapping.home.refreshListLabel</span
+        >
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-azure-user-mapping"
+        [routerLink]="['/azure-user-mapping/new']"
+      >
+        <fa-icon icon="plus"></fa-icon>
+        <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.home.createLabel"
+          >Translation missing for genigatewayApp.genigatewayAzureUserMapping.home.createLabel</span
+        >
+      </button>
+    </div>
+  </h2>
+
+  <geni-alert-error></geni-alert-error>
+
+  <geni-alert></geni-alert>
+
+  <div class="alert alert-warning" id="no-result" *ngIf="azureUserMappings?.length === 0">
+    <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.home.notFound"
+      >Translation missing for genigatewayApp.genigatewayAzureUserMapping.home.notFound</span
+    >
+  </div>
+
+  <div class="table-responsive table-entities" id="entities" *ngIf="azureUserMappings && azureUserMappings.length > 0">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr geniSort [(predicate)]="predicate" [(ascending)]="ascending" (sortChange)="navigateToWithComponentValues()">
+          <th scope="col" geniSortBy="id">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.id"
+                >Translation missing for genigatewayApp.genigatewayAzureUserMapping.id</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="azureObjectId">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.azureObjectId"
+                >Translation missing for genigatewayApp.genigatewayAzureUserMapping.azureObjectId</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="azureUpn">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.azureUpn"
+                >Translation missing for genigatewayApp.genigatewayAzureUserMapping.azureUpn</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="displayName">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.displayName"
+                >Translation missing for genigatewayApp.genigatewayAzureUserMapping.displayName</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="email">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.email"
+                >Translation missing for genigatewayApp.genigatewayAzureUserMapping.email</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="department">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.department"
+                >Translation missing for genigatewayApp.genigatewayAzureUserMapping.department</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="jobTitle">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.jobTitle"
+                >Translation missing for genigatewayApp.genigatewayAzureUserMapping.jobTitle</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="isActive">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.isActive"
+                >Translation missing for genigatewayApp.genigatewayAzureUserMapping.isActive</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="lastLogin">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.lastLogin"
+                >Translation missing for genigatewayApp.genigatewayAzureUserMapping.lastLogin</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="loginCount">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.loginCount"
+                >Translation missing for genigatewayApp.genigatewayAzureUserMapping.loginCount</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="createdAt">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.createdAt"
+                >Translation missing for genigatewayApp.genigatewayAzureUserMapping.createdAt</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="updatedAt">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.updatedAt"
+                >Translation missing for genigatewayApp.genigatewayAzureUserMapping.updatedAt</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col" geniSortBy="user.id">
+            <div class="d-flex">
+              <span geniTranslate="genigatewayApp.genigatewayAzureUserMapping.user"
+                >Translation missing for genigatewayApp.genigatewayAzureUserMapping.user</span
+              >
+              <fa-icon class="p-1" icon="sort"></fa-icon>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let azureUserMapping of azureUserMappings; trackBy: trackId" data-cy="entityTable">
+          <td>
+            <a [routerLink]="['/azure-user-mapping', azureUserMapping.id, 'view']">{{ azureUserMapping.id }}</a>
+          </td>
+          <td>{{ azureUserMapping.azureObjectId }}</td>
+          <td>{{ azureUserMapping.azureUpn }}</td>
+          <td>{{ azureUserMapping.displayName }}</td>
+          <td>{{ azureUserMapping.email }}</td>
+          <td>{{ azureUserMapping.department }}</td>
+          <td>{{ azureUserMapping.jobTitle }}</td>
+          <td>{{ azureUserMapping.isActive }}</td>
+          <td>{{ azureUserMapping.lastLogin | formatMediumDatetime }}</td>
+          <td>{{ azureUserMapping.loginCount }}</td>
+          <td>{{ azureUserMapping.createdAt | formatMediumDatetime }}</td>
+          <td>{{ azureUserMapping.updatedAt | formatMediumDatetime }}</td>
+          <td>
+            {{ azureUserMapping.user?.id }}
+          </td>
+          <td class="text-end">
+            <div class="btn-group">
+              <a
+                [routerLink]="['/azure-user-mapping', azureUserMapping.id, 'view']"
+                class="btn btn-info btn-sm"
+                data-cy="entityDetailsButton"
+              >
+                <fa-icon icon="eye"></fa-icon>
+                <span class="d-none d-md-inline" geniTranslate="entity.action.view">View</span>
+              </a>
+
+              <a
+                [routerLink]="['/azure-user-mapping', azureUserMapping.id, 'edit']"
+                class="btn btn-primary btn-sm"
+                data-cy="entityEditButton"
+              >
+                <fa-icon icon="pencil-alt"></fa-icon>
+                <span class="d-none d-md-inline" geniTranslate="entity.action.edit">Edit</span>
+              </a>
+
+              <button type="submit" (click)="delete(azureUserMapping)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times"></fa-icon>
+                <span class="d-none d-md-inline" geniTranslate="entity.action.delete">Delete</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="azureUserMappings && azureUserMappings.length > 0">
+    <div class="d-flex justify-content-center">
+      <geni-item-count [params]="{ page: page, totalItems: totalItems, itemsPerPage: itemsPerPage }"></geni-item-count>
+    </div>
+
+    <div class="d-flex justify-content-center">
+      <ngb-pagination
+        [collectionSize]="totalItems"
+        [page]="page"
+        [pageSize]="itemsPerPage"
+        [maxSize]="5"
+        [rotate]="true"
+        [boundaryLinks]="true"
+        (pageChange)="navigateToPage($event)"
+      ></ngb-pagination>
+    </div>
+  </div>
+</div>
