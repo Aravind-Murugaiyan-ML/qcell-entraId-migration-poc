@@ -1,3 +1,0 @@
-org.springframework.test.context.ContextCustomizerFactory = com.geli.geni.\
-    gateway.config.SqlTestContainersSpringContextCustomizerFactory,com.geli.\
-    geni.gateway.config.KafkaTestContainersSpringContextCustomizerFactory
