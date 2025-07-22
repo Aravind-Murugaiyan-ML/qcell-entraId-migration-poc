@@ -280,9 +280,9 @@ reset-app-config: ## Reset app registration to production redirect URIs
 		fi; \
 	fi
 
-# Save to environment file
+# Save to environment file(Internal usage)
 .PHONY: save-env
-save-env: create-client-secret ## Save Azure configuration to .env file
+save-env: create-client-secret 
 	@echo "💾 Saving to environment file..."
 	@APP_ID=$$(az ad app list --display-name "$(APP_NAME)" --query '[0].appId' -o tsv); \
 	TENANT_ID=$$(az account show --query tenantId -o tsv); \

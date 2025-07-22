@@ -1,0 +1,28 @@
+// JDL file for MakTodoGateway application
+// Generated from JHipster prompts
+
+application {
+  config {
+    baseName maktodogateway
+    applicationType gateway
+    packageName mak.jhipster.doer
+    serverPort 8080
+    serviceDiscoveryType consul
+    authenticationType oauth2
+    databaseType sql
+    prodDatabaseType postgresql
+    devDatabaseType h2Disk
+    cacheProvider no
+    enableHibernateCache false
+    buildTool maven
+    searchEngine elasticsearch
+    messageBroker kafka
+    enableSwaggerCodegen true
+    clientFramework angular
+    withAdminUi true
+    clientTheme none
+    enableTranslation false
+    nativeLanguage en
+    testFrameworks []
+  }
+}

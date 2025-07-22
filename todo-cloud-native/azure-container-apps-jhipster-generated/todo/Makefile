@@ -4,9 +4,9 @@
 # Variables
 JHIPSTER_VERSION := 8.0.0
 NODE_VERSION := 20
-JDL_FILE := geni-azure-simplified.jdl
-GATEWAY_DIR := genigateway
-MICROSERVICE_DIR := genisiteservice
+JDL_FILE := jdl/makTodoGateway.jdl
+GATEWAY_DIR := maktodogateway
+MICROSERVICE_DIR := maktodoservice
 
 # Colors for output
 BLUE := \033[36m
@@ -95,9 +95,22 @@ upgrade-jhipster: ## Upgrade JHipster to latest version
 	@echo "$(GREEN)JHipster upgraded successfully.$(RESET)"
 	@jhipster --version
 
+create-gateway-directory: ## Create a new directory for gateway application(FOCUS: todo app)
+	@echo "$(BLUE)Creating directory gateway for todo...$(RESET)"
+	@mkdir -p $(GATEWAY_DIR)
+
 # ============================================================================
 # JDL and Application Management
 # ============================================================================
+
+
+generate-todo-gateway: create-gateway-directory ## Generate JHipster applications(FOCUS: todo app)
+	@echo "$(BLUE)generating gateway for todo application...$(RESET)"
+	@if [ -d "$(GATEWAY_DIR)" ]; then \
+		cd $(GATEWAY_DIR) && jhipster; \
+	else \
+		echo "$(YELLOW)Gateway directory not found.$(RESET)"; \
+	fi
 
 validate: ## Validate JDL file syntax and structure
 	@echo "$(BLUE)Validating JDL file: $(JDL_FILE)$(RESET)"
@@ -105,17 +118,19 @@ validate: ## Validate JDL file syntax and structure
 	@jhipster jdl $(JDL_FILE) --dry-run
 	@echo "$(GREEN)JDL validation successful!$(RESET)"
 
-generate: ## Generate JHipster applications from JDL
+generate-using-jdl: create-gateway-directory validate ## Generate JHipster applications from JDL
 	@echo "$(BLUE)Generating applications from $(JDL_FILE)...$(RESET)"
-	@make validate
-	@jhipster jdl $(JDL_FILE)
+	@cd $(GATEWAY_DIR) && jhipster jdl $(PWD)/$(JDL_FILE)
 	@echo "$(GREEN)Applications generated successfully!$(RESET)"
 
-regenerate: ## Clean and regenerate applications
+regenerate-using-jdl: ## Clean and regenerate applications
 	@echo "$(BLUE)Cleaning existing applications...$(RESET)"
 	@make clean-apps
 	@echo "$(BLUE)Regenerating applications...$(RESET)"
-	@make generate
+	@make generate-using-jdl
+	@echo "$(GREEN)Applications regenerated successfully!$(RESET)"
+
+
 
 # ============================================================================
 # Dependencies Management
@@ -158,20 +173,21 @@ update-deps: ## Update dependencies for all applications
 dev: ## Start all development servers
 	@echo "$(BLUE)Starting development servers...$(RESET)"
 	@echo "$(YELLOW)Starting gateway in background...$(RESET)"
-	@make dev-gateway &
+	@make dev-gateway-backend &
 	@sleep 10
 	@echo "$(YELLOW)Starting microservice in background...$(RESET)"
 	@make dev-microservice &
+	@make dev-frontend &
 	@echo "$(GREEN)Development servers started!$(RESET)"
 	@echo "$(BLUE)Gateway: http://localhost:8080$(RESET)"
 	@echo "$(BLUE)Microservice: http://localhost:8081$(RESET)"
 	@echo "$(YELLOW)Press Ctrl+C to stop all servers$(RESET)"
 	@wait
 
-dev-gateway: ## Start gateway development server
+dev-gateway-backend: ## Start gateway development server
 	@echo "$(BLUE)Starting gateway development server...$(RESET)"
 	@if [ -d "$(GATEWAY_DIR)" ]; then \
-		cd $(GATEWAY_DIR) && npm start; \
+		cd $(GATEWAY_DIR) && ./mvnw spring-boot:run; \
 	else \
 		echo "$(RED)Error: Gateway directory not found. Run 'make generate' first.$(RESET)"; \
 		exit 1; \
@@ -200,11 +216,6 @@ dev-backend: ## Start only backend development servers
 	@make dev-gateway-backend &
 	@make dev-microservice &
 	@wait
-
-dev-gateway-backend: ## Start gateway backend only
-	@if [ -d "$(GATEWAY_DIR)" ]; then \
-		cd $(GATEWAY_DIR) && ./mvnw spring-boot:run; \
-	fi
 
 # ============================================================================
 # Testing
@@ -321,24 +332,6 @@ status: ## Show status of all components
 	@echo "Gateway directory: $$(test -d $(GATEWAY_DIR) && echo '✓ Generated' || echo '✗ Not generated')"
 	@echo "Microservice directory: $$(test -d $(MICROSERVICE_DIR) && echo '✓ Generated' || echo '✗ Not generated')"
 
-info: ## Display project information
-	@echo "$(BLUE)=== GENI Azure JHipster Project ===$(RESET)"
-	@echo "JDL File: $(JDL_FILE)"
-	@echo "Gateway App: $(GATEWAY_DIR)"
-	@echo "Microservice App: $(MICROSERVICE_DIR)"
-	@echo "JHipster Version: $(JHIPSTER_VERSION)"
-	@echo "Node.js Version: $(NODE_VERSION)"
-	@echo ""
-	@echo "$(YELLOW)Architecture:$(RESET)"
-	@echo "- Gateway Service (Port 8080) - Azure integration & UI"
-	@echo "- Site Service (Port 8081) - Energy sites & devices"
-	@echo ""
-	@echo "$(YELLOW)Key Features:$(RESET)"
-	@echo "- Azure Entra ID authentication"
-	@echo "- OAuth2 security"
-	@echo "- PostgreSQL databases"
-	@echo "- Apache Kafka messaging"
-	@echo "- Angular frontend"
 
 logs: ## Show development server logs
 	@echo "$(BLUE)Recent development logs:$(RESET)"
