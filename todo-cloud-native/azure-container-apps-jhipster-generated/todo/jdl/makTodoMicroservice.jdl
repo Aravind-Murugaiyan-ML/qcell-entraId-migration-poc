@@ -1,0 +1,54 @@
+application {
+  config {
+    baseName todoservice
+    applicationType microservice
+    packageName mak.jhipster.doer
+    serverPort 8081
+    serviceDiscoveryType consul
+    authenticationType oauth2
+    databaseType sql
+    prodDatabaseType postgresql
+    devDatabaseType h2Disk
+    cacheProvider no
+    enableHibernateCache false
+    buildTool maven
+    searchEngine elasticsearch
+    messageBroker kafka
+    enableSwaggerCodegen true
+    clientFramework no
+    enableTranslation false
+    nativeLanguage en
+    testFrameworks []
+    reactive false
+  }
+}
+
+// Todo Entity Definition
+entity Todo {
+  title String required minlength(1) maxlength(255)
+  description String
+  completed Boolean
+  createdDate Instant
+  userId String
+}
+
+// Repository configuration
+repository Todo with JPA
+
+// Service configuration  
+service Todo with serviceImpl
+
+// Pagination
+paginate Todo with pagination
+
+// DTO mapping
+dto Todo with mapstruct
+
+// REST API
+rest Todo with TodoResource
+
+// Search configuration
+search Todo with elasticsearch
+
+// Microservice configuration
+microservice Todo with todoservice

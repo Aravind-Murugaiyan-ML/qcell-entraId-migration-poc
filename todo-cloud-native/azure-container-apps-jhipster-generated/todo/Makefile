@@ -172,11 +172,8 @@ update-deps: ## Update dependencies for all applications
 
 dev: ## Start all development servers
 	@echo "$(BLUE)Starting development servers...$(RESET)"
-	@echo "$(YELLOW)Starting gateway in background...$(RESET)"
-	@make dev-gateway-backend &
-	@sleep 10
-	@echo "$(YELLOW)Starting microservice in background...$(RESET)"
-	@make dev-microservice &
+	@echo "$(YELLOW)Starting gateway and microservice in background...$(RESET)"
+	@make dev-backend &
 	@make dev-frontend &
 	@echo "$(GREEN)Development servers started!$(RESET)"
 	@echo "$(BLUE)Gateway: http://localhost:8080$(RESET)"
@@ -184,7 +181,7 @@ dev: ## Start all development servers
 	@echo "$(YELLOW)Press Ctrl+C to stop all servers$(RESET)"
 	@wait
 
-dev-gateway-backend: ## Start gateway development server
+dev-backend-gateway: ## Start gateway development server
 	@echo "$(BLUE)Starting gateway development server...$(RESET)"
 	@if [ -d "$(GATEWAY_DIR)" ]; then \
 		cd $(GATEWAY_DIR) && ./mvnw spring-boot:run; \
@@ -193,7 +190,7 @@ dev-gateway-backend: ## Start gateway development server
 		exit 1; \
 	fi
 
-dev-microservice: ## Start microservice development server
+dev-backend-microservice: ## Start microservice development server
 	@echo "$(BLUE)Starting microservice development server...$(RESET)"
 	@if [ -d "$(MICROSERVICE_DIR)" ]; then \
 		cd $(MICROSERVICE_DIR) && ./mvnw spring-boot:run; \
@@ -214,6 +211,7 @@ dev-frontend: ## Start only frontend development server
 dev-backend: ## Start only backend development servers
 	@echo "$(BLUE)Starting backend development servers...$(RESET)"
 	@make dev-gateway-backend &
+	@sleep 10
 	@make dev-microservice &
 	@wait
 
@@ -223,19 +221,19 @@ dev-backend: ## Start only backend development servers
 
 test: ## Run all tests
 	@echo "$(BLUE)Running all tests...$(RESET)"
-	@make test-gateway
-	@make test-microservice
+	@make test-backend-gateway
+	@make test-backend-microservice
 	@echo "$(GREEN)All tests completed!$(RESET)"
 
-test-gateway: ## Run gateway tests
+test-backend-gateway: ## Run gateway tests
 	@echo "$(BLUE)Running gateway tests...$(RESET)"
 	@if [ -d "$(GATEWAY_DIR)" ]; then \
-		cd $(GATEWAY_DIR) && npm test; \
+		cd $(GATEWAY_DIR) && ./mvnw test; \
 	else \
 		echo "$(YELLOW)Gateway directory not found.$(RESET)"; \
 	fi
 
-test-microservice: ## Run microservice tests
+test-backend-microservice: ## Run microservice tests
 	@echo "$(BLUE)Running microservice tests...$(RESET)"
 	@if [ -d "$(MICROSERVICE_DIR)" ]; then \
 		cd $(MICROSERVICE_DIR) && ./mvnw test; \
