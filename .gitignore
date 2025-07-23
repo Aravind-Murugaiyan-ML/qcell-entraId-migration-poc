@@ -1,2 +1,14 @@
 todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/src/main/webapp/*
 todo-cloud-native/azure-container-apps-jhipster-generated/todo/src/main/resources/config/tls/keystore.p12
+todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/.editorconfig
+todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/.eslintignore
+todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/.eslintrc.json
+todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/.prettierignore
+todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/.prettierrc
+.gitignore
+todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/src/main/resources/config/tls/keystore.p12
+todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/src/main/resources/.h2.server.properties
+todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/src/main/docker/realm-config/jhipster-realm.json
+.vscode/settings.json
+todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/src/main/resources/.h2.server.properties
+todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/.yo-rc.json

@@ -149,12 +149,3 @@ Desktop.ini
 ######################
 /coverage/
 /.nyc_output/
-
-/webpack/
-/.mvn/
-/.jhipster/
-/.editorconfig
-/.eslintignore
-/.eslintrc.json
-/.prettierignore
-/.prettierrc
