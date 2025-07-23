@@ -56,11 +56,11 @@ public class EntityManager {
     private final R2dbcEntityTemplate r2dbcEntityTemplate;
     private final StatementMapper statementMapper;
 
-    public EntityManager(SqlRenderer sqlRenderer, UpdateMapper updateMapper, R2dbcEntityTemplate r2dbcEntityTemplate) {
+    public EntityManager(SqlRenderer sqlRenderer, UpdateMapper updateMapper, R2dbcEntityTemplate r2dbcEntityTemplate, StatementMapper statementMapper) {
         this.sqlRenderer = sqlRenderer;
         this.updateMapper = updateMapper;
         this.r2dbcEntityTemplate = r2dbcEntityTemplate;
-        this.statementMapper = r2dbcEntityTemplate.getDataAccessStrategy().getStatementMapper();
+        this.statementMapper = statementMapper;
     }
 
     /**
@@ -178,9 +178,7 @@ public class EntityManager {
                 Flux
                     .fromStream(referencedIds)
                     .flatMap((Object referenceId) -> {
-                        StatementMapper.InsertSpec insert = r2dbcEntityTemplate
-                            .getDataAccessStrategy()
-                            .getStatementMapper()
+                        StatementMapper.InsertSpec insert = statementMapper
                             .createInsert(table.tableName)
                             .withColumn(table.idColumn, Parameter.from(entityId))
                             .withColumn(table.referenceColumn, Parameter.from(referenceId));
@@ -194,13 +192,11 @@ public class EntityManager {
 
     public Mono<Void> deleteFromLinkTable(LinkTable table, Object entityId) {
         Assert.notNull(entityId, "entityId is null");
-        StatementMapper.DeleteSpec deleteSpec = r2dbcEntityTemplate
-            .getDataAccessStrategy()
-            .getStatementMapper()
-            .createDelete(table.tableName)
-            .withCriteria(Criteria.from(Criteria.where(table.idColumn).is(entityId)));
-        return r2dbcEntityTemplate.getDatabaseClient().sql(statementMapper.getMappedObject(deleteSpec)).then();
-    }
+            StatementMapper.DeleteSpec deleteSpec = statementMapper
+                .createDelete(table.tableName)
+                .withCriteria(Criteria.from(Criteria.where(table.idColumn).is(entityId)));
+            return r2dbcEntityTemplate.getDatabaseClient().sql(statementMapper.getMappedObject(deleteSpec)).fetch().rowsUpdated().then();
+        }
 
     private String createSelectImpl(SelectOrdered selectFrom, Class<?> entityType, Sort sortParameter) {
         if (sortParameter != null && sortParameter.isSorted()) {

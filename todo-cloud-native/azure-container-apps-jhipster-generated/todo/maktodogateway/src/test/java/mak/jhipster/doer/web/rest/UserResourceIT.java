@@ -69,7 +69,7 @@ class UserResourceIT {
     private User user;
 
     @BeforeEach
-    public void setupCsrf() {
+    void setupCsrf() {
         webTestClient = webTestClient.mutateWith(csrf());
     }
 
@@ -79,7 +79,7 @@ class UserResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which has a required relationship to the User entity.
      */
-    public static User createEntity(EntityManager em) {
+    public static User createEntity() {
         User user = new User();
         user.setId(UUID.randomUUID().toString());
         user.setLogin(DEFAULT_LOGIN + RandomStringUtils.randomAlphabetic(5));
@@ -108,18 +108,18 @@ class UserResourceIT {
     /**
      * Setups the database with one user.
      */
-    public static User initTestUser(UserRepository userRepository, EntityManager em) {
+    public static User initTestUser(UserRepository userRepository) {
         userRepository.deleteAllUserAuthorities().block();
         userRepository.deleteAll().block();
-        User user = createEntity(em);
+        User user = createEntity();
         user.setLogin(DEFAULT_LOGIN);
         user.setEmail(DEFAULT_EMAIL);
         return user;
     }
 
     @BeforeEach
-    public void initTest() {
-        user = initTestUser(userRepository, em);
+    void initTest() {
+        user = initTestUser(userRepository);
     }
 
     @Test
@@ -151,20 +151,20 @@ class UserResourceIT {
         userDTO.setLastModifiedBy(DEFAULT_LOGIN);
         userDTO.setAuthorities(Collections.singleton(AuthoritiesConstants.USER));
 
-        User user = userMapper.userDTOToUser(userDTO);
-        assertThat(user.getId()).isEqualTo(DEFAULT_ID);
-        assertThat(user.getLogin()).isEqualTo(DEFAULT_LOGIN);
-        assertThat(user.getFirstName()).isEqualTo(DEFAULT_FIRSTNAME);
-        assertThat(user.getLastName()).isEqualTo(DEFAULT_LASTNAME);
-        assertThat(user.getEmail()).isEqualTo(DEFAULT_EMAIL);
-        assertThat(user.isActivated()).isTrue();
-        assertThat(user.getImageUrl()).isEqualTo(DEFAULT_IMAGEURL);
-        assertThat(user.getLangKey()).isEqualTo(DEFAULT_LANGKEY);
-        assertThat(user.getCreatedBy()).isNull();
-        assertThat(user.getCreatedDate()).isNotNull();
-        assertThat(user.getLastModifiedBy()).isNull();
-        assertThat(user.getLastModifiedDate()).isNotNull();
-        assertThat(user.getAuthorities()).extracting("name").containsExactly(AuthoritiesConstants.USER);
+        User mappedUser = userMapper.userDTOToUser(userDTO);
+        assertThat(mappedUser.getId()).isEqualTo(DEFAULT_ID);
+        assertThat(mappedUser.getLogin()).isEqualTo(DEFAULT_LOGIN);
+        assertThat(mappedUser.getFirstName()).isEqualTo(DEFAULT_FIRSTNAME);
+        assertThat(mappedUser.getLastName()).isEqualTo(DEFAULT_LASTNAME);
+        assertThat(mappedUser.getEmail()).isEqualTo(DEFAULT_EMAIL);
+        assertThat(mappedUser.isActivated()).isTrue();
+        assertThat(mappedUser.getImageUrl()).isEqualTo(DEFAULT_IMAGEURL);
+        assertThat(mappedUser.getLangKey()).isEqualTo(DEFAULT_LANGKEY);
+        assertThat(mappedUser.getCreatedBy()).isNull();
+        assertThat(mappedUser.getCreatedDate()).isNotNull();
+        assertThat(mappedUser.getLastModifiedBy()).isNull();
+        assertThat(mappedUser.getLastModifiedDate()).isNotNull();
+        assertThat(mappedUser.getAuthorities()).extracting("name").containsExactly(AuthoritiesConstants.USER);
     }
 
     @Test
@@ -218,7 +218,4 @@ class UserResourceIT {
         assertThat(authorityA).isEqualTo(authorityB).hasSameHashCodeAs(authorityB);
     }
 
-    private void assertPersistedUsers(Consumer<List<User>> userAssertion) {
-        userAssertion.accept(userRepository.findAll().collectList().block());
-    }
 }
