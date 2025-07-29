@@ -1,7 +1,6 @@
 package mak.jhipster.doer.web.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf;
 
 import mak.jhipster.doer.IntegrationTest;
