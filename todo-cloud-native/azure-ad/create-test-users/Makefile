@@ -1,277 +1,398 @@
-# Makefile for GENI JHipster setup using existing Azure AD users
+# Makefile for creating GENI JHipster test users
 
-# Variables
-AZURE_DOMAIN = xoriant.onmicrosoft.com
-RESOURCE_GROUP = geni-jhipster-rg
-SUBSCRIPTION_ID = cdaddc8f-3ad6-4b69-ae98-bfeae5609265
+# Load environment variables from .env-user-creation file if it exists
+-include .env-user-creation
 
-# Use existing users (modify these to actual existing users)
-ADMIN_UPN = murugaiyan_a@xoriant.com
-MANAGER_UPN = murugaiyan_a@xoriant.com  # Same user with different role
-OPERATOR_UPN = murugaiyan_a@xoriant.com  # Same user with different role
+# Default Variables (will be overridden by .env-user-creation if present)
+AZURE_DOMAIN ?= your-domain.onmicrosoft.com
+RESOURCE_GROUP ?= geni-jhipster-rg
+SUBSCRIPTION_ID ?= your-subscription-id
 
-GENI_ADMIN_ROLE ?= GENI Administrator
-GENI_MANAGER_ROLE ?= GENI Site Manager
-GENI_OPERATOR_ROLE ?= GENI Operator
+# User Principal Names (constructed from AZURE_DOMAIN)
+ADMIN_UPN ?= geniadmin@$(AZURE_DOMAIN)
+MANAGER_UPN ?= genimanager@$(AZURE_DOMAIN)
+OPERATOR_UPN ?= genioperator@$(AZURE_DOMAIN)
+
+# User Passwords (should be set in .env-user-creation)
+ADMIN_PASSWORD ?= ChangeMe123!
+MANAGER_PASSWORD ?= ChangeMe456!
+OPERATOR_PASSWORD ?= ChangeMe789!
 
 # Security Groups
-ADMIN_GROUP = GENI-Administrators
-MANAGER_GROUP = GENI-Site-Managers
-OPERATOR_GROUP = GENI-Operators
+ADMIN_GROUP ?= GENI-Administrators
+MANAGER_GROUP ?= GENI-Site-Managers
+OPERATOR_GROUP ?= GENI-Operators
 
-# Custom Roles (if they exist)
-ADMIN_ROLE = Contributor
-MANAGER_ROLE = Reader
-OPERATOR_ROLE = Reader
+# Custom Roles
+ADMIN_ROLE ?= GENI Administrator
+MANAGER_ROLE ?= GENI Site Manager
+OPERATOR_ROLE ?= GENI Operator
 
-# Colors
+# Colors for output
 RED = \033[0;31m
 GREEN = \033[0;32m
 YELLOW = \033[1;33m
 BLUE = \033[0;34m
-NC = \033[0m
+NC = \033[0m # No Color
 
-.PHONY: help
 help: ## Display help information
-	@echo "$(BLUE)GENI JHipster Setup - Existing Users$(NC)"
+	@echo "$(BLUE)GENI JHipster Test Users Management$(NC)"
 	@echo ""
-	@echo "This Makefile works with existing users instead of creating new ones"
+	@echo "Available targets:"
 	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*##.*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*##"}; {printf "  $(GREEN)%-25s$(NC) %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*##.*$$' Makefile | sort | cut -d: -f1 | while read target; do \
+		desc=$$(grep "^$$target:.*##" Makefile | sed 's/.*##[[:space:]]*//' ); \
+		printf "  $(GREEN)%-25s$(NC) %s\n" "$$target" "$$desc"; \
+	done
 	@echo ""
-	@echo "$(YELLOW)Current Configuration:$(NC)"
-	@echo "  Admin User: $(ADMIN_UPN)"
-	@echo "  Manager User: $(MANAGER_UPN)"
-	@echo "  Operator User: $(OPERATOR_UPN)"
+	@echo "$(YELLOW)Configuration:$(NC)"
+	@echo "  Domain: $(AZURE_DOMAIN)"
+	@echo "  Resource Group: $(RESOURCE_GROUP)" 
+	@echo "  Subscription: $(SUBSCRIPTION_ID)"
 
+
+# Show current configuration
+.PHONY: show-config
+show-config: ## Display current configuration values
+	@echo "$(BLUE)🔧 Current Configuration:$(NC)"
+	@echo "========================"
+	@echo "AZURE_DOMAIN       = $(AZURE_DOMAIN)"
+	@echo "RESOURCE_GROUP     = $(RESOURCE_GROUP)"
+	@echo "SUBSCRIPTION_ID    = $(SUBSCRIPTION_ID)"
+	@echo ""
+	@echo "ADMIN_UPN          = $(ADMIN_UPN)"
+	@echo "MANAGER_UPN        = $(MANAGER_UPN)"
+	@echo "OPERATOR_UPN       = $(OPERATOR_UPN)"
+	@echo ""
+	@echo "ADMIN_PASSWORD     = ***hidden***"
+	@echo "MANAGER_PASSWORD   = ***hidden***"
+	@echo "OPERATOR_PASSWORD  = ***hidden***"
+	@echo ""
+	@echo "ADMIN_GROUP        = $(ADMIN_GROUP)"
+	@echo "MANAGER_GROUP      = $(MANAGER_GROUP)"
+	@echo "OPERATOR_GROUP     = $(OPERATOR_GROUP)"
+	@echo ""
+	@echo "ADMIN_ROLE         = $(ADMIN_ROLE)"
+	@echo "MANAGER_ROLE       = $(MANAGER_ROLE)"
+	@echo "OPERATOR_ROLE      = $(OPERATOR_ROLE)"
+	@echo ""
+	@if [ -f ".env-user-creation" ]; then \
+		echo "$(GREEN)✅ Configuration loaded from .env-user-creation$(NC)"; \
+	else \
+		echo "$(YELLOW)⚠️  Using default configuration$(NC)"; \
+	fi
+
+# Check Azure login
 .PHONY: check-login
-check-login: ## Check Azure CLI login
+check-login: ## Check if logged into Azure CLI
 	@echo "$(BLUE)🔧 Checking Azure CLI session...$(NC)"
 	@if az account show >/dev/null 2>&1; then \
 		echo "$(GREEN)✅ Logged in as: $$(az account show --query user.name -o tsv)$(NC)"; \
 	else \
 		echo "$(RED)❌ Not logged in to Azure CLI$(NC)"; \
+		echo "Run: az login"; \
 		exit 1; \
 	fi
 
+# Set subscription
 .PHONY: set-subscription
 set-subscription: check-login ## Set Azure subscription
+	@echo "$(BLUE)🔧 Setting subscription...$(NC)"
 	@az account set --subscription "$(SUBSCRIPTION_ID)"
-	@echo "$(GREEN)✅ Subscription set$(NC)"
-
-.PHONY: list-existing-users
-list-existing-users: set-subscription ## List existing users you can use
-	@echo "$(BLUE)📋 Available users in your domain:$(NC)"
-	@az ad user list --query "[?contains(userPrincipalName,'@$(AZURE_DOMAIN)')].{Name:displayName, UPN:userPrincipalName, Department:department}" -o table
-
-.PHONY: check-user-permissions
-check-user-permissions: set-subscription ## Check current user's permissions
-	@echo "$(BLUE)🔍 Checking your current permissions...$(NC)"
-	@echo "Azure AD roles:"
-	@az rest --method GET --url "https://graph.microsoft.com/v1.0/me/memberOf" --query "value[?contains(@odata.type,'Role')].displayName" -o table 2>/dev/null || echo "$(YELLOW)⚠️  Cannot retrieve Azure AD roles$(NC)"
-	@echo ""
-	@echo "Azure subscription roles:"
-	@az role assignment list --assignee $(ADMIN_UPN) --query "[].{Role:roleDefinitionName, Scope:scope}" -o table
-
-# Target to unassign GENI role assignments
-.PHONY: unassign-geni-roles
-unassign-geni-roles: ## Remove all GENI role assignments from current user
-	@echo "$(BLUE)🎭 Attempting to unassign GENI roles...$(NC)"
-	@USER_ID=$$(az ad user show --id "$(ADMIN_UPN)" --query id -o tsv 2>/dev/null); \
-	SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
-	if [ -n "$$USER_ID" ]; then \
-		SCOPE="/subscriptions/$$SUBSCRIPTION_ID"; \
-		echo "$(BLUE)👤 User: $(ADMIN_UPN) ($$USER_ID)$(NC)"; \
-		echo "$(BLUE)📋 Subscription: $$SUBSCRIPTION_ID$(NC)"; \
-		echo "$(BLUE)🎯 Scope: $$SCOPE$(NC)"; \
-		echo ""; \
-		for role in "$(GENI_ADMIN_ROLE)" "$(GENI_MANAGER_ROLE)" "$(GENI_OPERATOR_ROLE)"; do \
-			echo "Removing role assignment: $$role..."; \
-			EXISTING_ASSIGNMENT=$$(az role assignment list --assignee "$$USER_ID" --role "$$role" --subscription "$$SUBSCRIPTION_ID" --query '[0].id' -o tsv 2>/dev/null); \
-			if [ -n "$$EXISTING_ASSIGNMENT" ]; then \
-				az role assignment delete --assignee "$$USER_ID" --role "$$role" --scope "$$SCOPE" >/dev/null 2>&1; \
-				if [ $$? -eq 0 ]; then \
-					echo "$(GREEN)✅ Removed $$role$(NC)"; \
-				else \
-					echo "$(RED)❌ Failed to remove $$role$(NC)"; \
-				fi; \
-			else \
-				echo "$(YELLOW)⚠️  $$role not assigned$(NC)"; \
-			fi; \
-		done; \
+	@if [ $$? -eq 0 ]; then \
+		echo "$(GREEN)✅ Subscription set to $(SUBSCRIPTION_ID)$(NC)"; \
 	else \
-		echo "$(RED)❌ Could not get your user ID$(NC)"; \
+		echo "$(RED)❌ Failed to set subscription$(NC)"; \
+		exit 1; \
 	fi
 
-# Target to unassign role assignments at resource group level
-.PHONY: unassign-geni-roles-rg
-unassign-geni-roles-rg: ## Remove GENI role assignments from resource group scope
-	@echo "$(BLUE)🎭 Attempting to unassign GENI roles from resource group...$(NC)"
-	@USER_ID=$$(az ad user show --id "$(ADMIN_UPN)" --query id -o tsv 2>/dev/null); \
-	SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
-	RESOURCE_GROUP=$$(az group list --query "[?contains(name, 'geni')].name | [0]" -o tsv); \
-	if [ -n "$$USER_ID" ] && [ -n "$$RESOURCE_GROUP" ]; then \
-		SCOPE="/subscriptions/$$SUBSCRIPTION_ID/resourceGroups/$$RESOURCE_GROUP"; \
-		echo "$(BLUE)👤 User: $(ADMIN_UPN) ($$USER_ID)$(NC)"; \
-		echo "$(BLUE)🎯 Scope: $$SCOPE$(NC)"; \
-		echo ""; \
-		for role in "$(GENI_ADMIN_ROLE)" "$(GENI_MANAGER_ROLE)" "$(GENI_OPERATOR_ROLE)"; do \
-			echo "Removing role assignment: $$role..."; \
-			EXISTING_ASSIGNMENT=$$(az role assignment list --assignee "$$USER_ID" --role "$$role" --scope "$$SCOPE" --query '[0].id' -o tsv 2>/dev/null); \
-			if [ -n "$$EXISTING_ASSIGNMENT" ]; then \
-				az role assignment delete --assignee "$$USER_ID" --role "$$role" --scope "$$SCOPE" >/dev/null 2>&1; \
-				if [ $$? -eq 0 ]; then \
-					echo "$(GREEN)✅ Removed $$role$(NC)"; \
-				else \
-					echo "$(RED)❌ Failed to remove $$role$(NC)"; \
-				fi; \
-			else \
-				echo "$(YELLOW)⚠️  $$role not assigned$(NC)"; \
-			fi; \
-		done; \
-	else \
-		echo "$(RED)❌ Could not get user ID or resource group$(NC)"; \
-	fi
-
-# Target to check current GENI role assignments
-.PHONY: check-geni-roles
-check-geni-roles: ## Check current GENI role assignments
-	@echo "$(BLUE)🔍 Checking current GENI role assignments...$(NC)"
-	@USER_ID=$$(az ad user show --id "$(ADMIN_UPN)" --query id -o tsv 2>/dev/null); \
-	SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
-	if [ -n "$$USER_ID" ]; then \
-		echo "$(BLUE)👤 User: $(ADMIN_UPN) ($$USER_ID)$(NC)"; \
-		echo "$(BLUE)📋 Subscription: $$SUBSCRIPTION_ID$(NC)"; \
-		echo ""; \
-		echo "GENI role assignments:"; \
-		GENI_ASSIGNMENTS=$$(az role assignment list --assignee "$$USER_ID" --subscription "$$SUBSCRIPTION_ID" --query "[?contains(roleDefinitionName, 'GENI')].{Role:roleDefinitionName, Scope:scope}" -o table); \
-		if [ -n "$$GENI_ASSIGNMENTS" ]; then \
-			echo "$$GENI_ASSIGNMENTS"; \
+# Check prerequisites
+.PHONY: check-prerequisites
+check-prerequisites: set-subscription ## Check if groups and roles exist
+	@echo "$(BLUE)🔍 Checking prerequisites...$(NC)"
+	@echo "Checking security groups..."
+	@for group in "$(ADMIN_GROUP)" "$(MANAGER_GROUP)" "$(OPERATOR_GROUP)"; do \
+		if az ad group show --group "$$group" >/dev/null 2>&1; then \
+			echo "$(GREEN)✅ Group $$group exists$(NC)"; \
 		else \
-			echo "$(YELLOW)⚠️  No GENI role assignments found$(NC)"; \
+			echo "$(YELLOW)⚠️  Group $$group does not exist - will create if needed$(NC)"; \
 		fi; \
-		echo ""; \
-		echo "All role assignments:"; \
-		az role assignment list --assignee "$$USER_ID" --subscription "$$SUBSCRIPTION_ID" --query '[].{Role:roleDefinitionName, Scope:scope}' -o table; \
-	else \
-		echo "$(RED)❌ Could not get your user ID$(NC)"; \
-	fi
+	done
+	@echo "Checking custom roles..."
+	@for role in "$(ADMIN_ROLE)" "$(MANAGER_ROLE)" "$(OPERATOR_ROLE)"; do \
+		if az role definition list --name "$$role" >/dev/null 2>&1; then \
+			echo "$(GREEN)✅ Role $$role exists$(NC)"; \
+		else \
+			echo "$(YELLOW)⚠️  Role $$role does not exist - will need to be created$(NC)"; \
+		fi; \
+	done
 
-# Target to reassign GENI roles after unassigning
-.PHONY: reassign-geni-roles
-reassign-geni-roles: unassign-geni-roles ## Unassign and then reassign GENI roles
-	@echo "$(BLUE)⏳ Waiting 5 seconds for unassignment to propagate...$(NC)"
-	@sleep 5
-	@echo "$(BLUE)🎭 Reassigning GENI roles...$(NC)"
-	@USER_ID=$$(az ad user show --id "$(ADMIN_UPN)" --query id -o tsv 2>/dev/null); \
-	SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
-	if [ -n "$$USER_ID" ]; then \
-		for role in "$(GENI_ADMIN_ROLE)" "$(GENI_MANAGER_ROLE)" "$(GENI_OPERATOR_ROLE)"; do \
-			echo "Assigning: $$role..."; \
-			az role assignment create --assignee "$$USER_ID" --role "$$role" --scope "/subscriptions/$$SUBSCRIPTION_ID" >/dev/null 2>&1; \
+# Create security groups
+.PHONY: create-groups
+create-groups: set-subscription ## Create security groups if they don't exist
+	@echo "$(BLUE)👥 Creating security groups...$(NC)"
+	@for group in "$(ADMIN_GROUP)" "$(MANAGER_GROUP)" "$(OPERATOR_GROUP)"; do \
+		if az ad group show --group "$$group" >/dev/null 2>&1; then \
+			echo "$(GREEN)✅ Group $$group already exists$(NC)"; \
+		else \
+			echo "🔧 Creating group $$group..."; \
+			MAIL_NICKNAME=$$(echo "$$group" | tr '[:upper:]' '[:lower:]' | tr '-' ''); \
+			az ad group create --display-name "$$group" --mail-nickname "$$MAIL_NICKNAME"; \
 			if [ $$? -eq 0 ]; then \
-				echo "$(GREEN)✅ Assigned $$role$(NC)"; \
+				echo "$(GREEN)✅ Created group $$group$(NC)"; \
 			else \
-				echo "$(RED)❌ Failed to assign $$role$(NC)"; \
+				echo "$(RED)❌ Failed to create group $$group$(NC)"; \
+				exit 1; \
 			fi; \
-		done; \
-	fi
+		fi; \
+	done
 
-.PHONY: create-resource-group
-create-resource-group: set-subscription ## Create resource group for GENI
-	@echo "$(BLUE)🏗️ Creating resource group...$(NC)"
-	@if az group show --name "$(RESOURCE_GROUP)" >/dev/null 2>&1; then \
-		echo "$(GREEN)✅ Resource group $(RESOURCE_GROUP) already exists$(NC)"; \
+.PHONY: create-admin-user
+create-admin-user: set-subscription ## Create GENI Test Administrator user
+	@echo "$(BLUE)👤 Creating GENI Test Administrator...$(NC)"
+	@if az ad user show --id "$(ADMIN_UPN)" >/dev/null 2>&1; then \
+		echo "$(YELLOW)⚠️  User $(ADMIN_UPN) already exists$(NC)"; \
 	else \
-		az group create --name "$(RESOURCE_GROUP)" --location eastus; \
+		az ad user create \
+			--display-name "GENI Test Administrator" \
+			--user-principal-name "$(ADMIN_UPN)" \
+			--password "$(ADMIN_PASSWORD)"; \
 		if [ $$? -eq 0 ]; then \
-			echo "$(GREEN)✅ Created resource group $(RESOURCE_GROUP)$(NC)"; \
+			echo "$(GREEN)✅ Created admin user $(ADMIN_UPN)$(NC)"; \
 		else \
-			echo "$(RED)❌ Failed to create resource group$(NC)"; \
+			echo "$(RED)❌ Failed to create admin user$(NC)"; \
+			exit 1; \
 		fi; \
 	fi
 
-.PHONY: create-app-registration
-create-app-registration: set-subscription ## Create Azure AD app registration
-	@echo "$(BLUE)📱 Creating Azure AD app registration...$(NC)"
-	@if az ad app list --display-name "GENI JHipster Gateway" --query "[0].appId" -o tsv | grep -q .; then \
-		echo "$(GREEN)✅ App registration already exists$(NC)"; \
-		APP_ID=$$(az ad app list --display-name "GENI JHipster Gateway" --query "[0].appId" -o tsv); \
-		echo "App ID: $$APP_ID"; \
+.PHONY: create-manager-user
+create-manager-user: set-subscription ## Create GENI Test Site Manager user
+	@echo "$(BLUE)👤 Creating GENI Test Site Manager...$(NC)"
+	@if az ad user show --id "$(MANAGER_UPN)" >/dev/null 2>&1; then \
+		echo "$(YELLOW)⚠️  User $(MANAGER_UPN) already exists$(NC)"; \
 	else \
-		az ad app create \
-			--display-name "GENI JHipster Gateway" \
-			--web-redirect-uris "http://localhost:8080/login/oauth2/code/oidc" \
-			--web-redirect-uris "https://geni-jhipster.azurewebsites.net/login/oauth2/code/oidc"; \
+		az ad user create \
+			--display-name "GENI Test Site Manager" \
+			--user-principal-name "$(MANAGER_UPN)" \
+			--password "$(MANAGER_PASSWORD)"; \
 		if [ $$? -eq 0 ]; then \
-			echo "$(GREEN)✅ Created app registration$(NC)"; \
-			APP_ID=$$(az ad app list --display-name "GENI JHipster Gateway" --query "[0].appId" -o tsv); \
-			echo "App ID: $$APP_ID"; \
-			az ad sp create --id "$$APP_ID"; \
-			echo "$(GREEN)✅ Created service principal$(NC)"; \
+			echo "$(GREEN)✅ Created manager user $(MANAGER_UPN)$(NC)"; \
 		else \
-			echo "$(YELLOW)⚠️  Could not create app registration (permission denied)$(NC)"; \
+			echo "$(RED)❌ Failed to create manager user$(NC)"; \
+			exit 1; \
 		fi; \
 	fi
 
-.PHONY: continue-development
-continue-development: ## Continue with JHipster development using current setup
-	@echo "$(BLUE)🚀 Continue with JHipster development$(NC)"
-	@echo ""
-	@echo "$(GREEN)✅ You can continue with the 48-hour plan using:$(NC)"
-	@echo ""
-	@echo "1. Your own user account for testing: $(ADMIN_UPN)"
-	@echo "2. Basic OAuth2 setup (single user, multiple roles)"
-	@echo "3. JHipster development with simplified auth"
-	@echo ""
-	@echo "$(BLUE)Next steps:$(NC)"
-	@echo "  1. Generate JHipster applications: $(GREEN)jhipster jdl geni-azure-microservices.jdl$(NC)"
-	@echo "  2. Configure OAuth2 with your app registration"
-	@echo "  3. Test with single user having multiple roles"
-	@echo "  4. Request proper permissions for multi-user testing later"
-	@echo ""
-	@echo "$(YELLOW)⚠️  Save these for OAuth2 configuration:$(NC)"
-	@APP_ID=$$(az ad app list --display-name "GENI JHipster Gateway" --query "[0].appId" -o tsv 2>/dev/null); \
-	TENANT_ID=$$(az account show --query tenantId -o tsv); \
-	echo "  AZURE_CLIENT_ID=$$APP_ID"; \
-	echo "  AZURE_TENANT_ID=$$TENANT_ID"
+.PHONY: create-operator-user
+create-operator-user: set-subscription ## Create GENI Test Operator user
+	@echo "$(BLUE)👤 Creating GENI Test Operator...$(NC)"
+	@if az ad user show --id "$(OPERATOR_UPN)" >/dev/null 2>&1; then \
+		echo "$(YELLOW)⚠️  User $(OPERATOR_UPN) already exists$(NC)"; \
+	else \
+		az ad user create \
+			--display-name "GENI Test Operator" \
+			--user-principal-name "$(OPERATOR_UPN)" \
+			--password "$(OPERATOR_PASSWORD)"; \
+		if [ $$? -eq 0 ]; then \
+			echo "$(GREEN)✅ Created operator user $(OPERATOR_UPN)$(NC)"; \
+		else \
+			echo "$(RED)❌ Failed to create operator user$(NC)"; \
+			exit 1; \
+		fi; \
+	fi
 
-.PHONY: show-environment-vars
-show-environment-vars: set-subscription ## Show environment variables for JHipster
-	@echo "$(BLUE)📋 Environment variables for JHipster configuration:$(NC)"
-	@echo ""
-	@APP_ID=$$(az ad app list --display-name "GENI JHipster Gateway" --query "[0].appId" -o tsv 2>/dev/null); \
-	TENANT_ID=$$(az account show --query tenantId -o tsv); \
-	SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
-	echo "export AZURE_CLIENT_ID=$$APP_ID"; \
-	echo "export AZURE_TENANT_ID=$$TENANT_ID"; \
-	echo "export AZURE_SUBSCRIPTION_ID=$$SUBSCRIPTION_ID"; \
-	echo "export AZURE_DOMAIN=$(AZURE_DOMAIN)"; \
-	echo "export SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_CLIENT-ID=$$APP_ID"; \
-	echo "export SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_OIDC_ISSUER-URI=https://login.microsoftonline.com/$$TENANT_ID/v2.0"; \
-	echo ""
-	@echo "$(YELLOW)⚠️  You'll need to generate a client secret:$(NC)"; \
-	echo "az ad app credential reset --id \$$AZURE_CLIENT_ID --append"
+# Create all users
+.PHONY: create-users
+create-users: create-admin-user create-manager-user create-operator-user ## Create all test users
+	@echo "$(GREEN)✅ All test users created!$(NC)"
 
-.PHONY: workaround-summary
-workaround-summary: ## Show summary of workaround approach
-	@echo "$(BLUE)📋 GENI JHipster Development Workaround Summary$(NC)"
+# Assign users to groups
+.PHONY: assign-groups
+assign-groups:  ## Assign users to security groups
+	@echo "$(BLUE)👥 Assigning users to groups...$(NC)"
+	@echo "Assigning $(ADMIN_UPN) to $(ADMIN_GROUP)..."
+	@ADMIN_USER_ID=$$(az ad user show --id "$(ADMIN_UPN)" --query id -o tsv 2>/dev/null); \
+	if [ -n "$$ADMIN_USER_ID" ]; then \
+		az ad group member add --group "$(ADMIN_GROUP)" --member-id "$$ADMIN_USER_ID" 2>/dev/null || true; \
+		echo "$(GREEN)✅ Added admin to $(ADMIN_GROUP)$(NC)"; \
+	else \
+		echo "$(RED)❌ Could not get admin user ID$(NC)"; \
+		exit 1; \
+	fi
+	@echo "Assigning $(MANAGER_UPN) to $(MANAGER_GROUP)..."
+	@MANAGER_USER_ID=$$(az ad user show --id "$(MANAGER_UPN)" --query id -o tsv 2>/dev/null); \
+	if [ -n "$$MANAGER_USER_ID" ]; then \
+		az ad group member add --group "$(MANAGER_GROUP)" --member-id "$$MANAGER_USER_ID" 2>/dev/null || true; \
+		echo "$(GREEN)✅ Added manager to $(MANAGER_GROUP)$(NC)"; \
+	else \
+		echo "$(RED)❌ Could not get manager user ID$(NC)"; \
+		exit 1; \
+	fi
+	@echo "Assigning $(OPERATOR_UPN) to $(OPERATOR_GROUP)..."
+	@OPERATOR_USER_ID=$$(az ad user show --id "$(OPERATOR_UPN)" --query id -o tsv 2>/dev/null); \
+	if [ -n "$$OPERATOR_USER_ID" ]; then \
+		az ad group member add --group "$(OPERATOR_GROUP)" --member-id "$$OPERATOR_USER_ID" 2>/dev/null || true; \
+		echo "$(GREEN)✅ Added operator to $(OPERATOR_GROUP)$(NC)"; \
+	else \
+		echo "$(RED)❌ Could not get operator user ID$(NC)"; \
+		exit 1; \
+	fi
+
+# Assign Azure roles
+.PHONY: assign-roles
+assign-roles: ## Assign custom Azure roles to users
+	@echo "$(BLUE)🎭 Assigning Azure roles...$(NC)"
+	@SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
+	RESOURCE_GROUP_SCOPE="/subscriptions/$$SUBSCRIPTION_ID/resourceGroups/$(RESOURCE_GROUP)"; \
+	echo "Using scope: $$RESOURCE_GROUP_SCOPE"
+	@echo "Assigning $(ADMIN_ROLE) to $(ADMIN_UPN)..."
+	@ADMIN_USER_ID=$$(az ad user show --id "$(ADMIN_UPN)" --query id -o tsv 2>/dev/null); \
+	if [ -n "$$ADMIN_USER_ID" ]; then \
+		SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
+		RESOURCE_GROUP_SCOPE="/subscriptions/$$SUBSCRIPTION_ID/resourceGroups/$(RESOURCE_GROUP)"; \
+		if az role assignment create \
+			--assignee "$$ADMIN_USER_ID" \
+			--role "$(ADMIN_ROLE)" \
+			--scope "$$RESOURCE_GROUP_SCOPE" 2>/dev/null; then \
+			echo "$(GREEN)✅ Assigned $(ADMIN_ROLE) to admin$(NC)"; \
+		else \
+			echo "$(YELLOW)⚠️  Role assignment failed - check if role exists$(NC)"; \
+		fi; \
+	fi
+	@echo "Assigning $(MANAGER_ROLE) to $(MANAGER_UPN)..."
+	@MANAGER_USER_ID=$$(az ad user show --id "$(MANAGER_UPN)" --query id -o tsv 2>/dev/null); \
+	if [ -n "$$MANAGER_USER_ID" ]; then \
+		SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
+		RESOURCE_GROUP_SCOPE="/subscriptions/$$SUBSCRIPTION_ID/resourceGroups/$(RESOURCE_GROUP)"; \
+		if az role assignment create \
+			--assignee "$$MANAGER_USER_ID" \
+			--role "$(MANAGER_ROLE)" \
+			--scope "$$RESOURCE_GROUP_SCOPE" 2>/dev/null; then \
+			echo "$(GREEN)✅ Assigned $(MANAGER_ROLE) to manager$(NC)"; \
+		else \
+			echo "$(YELLOW)⚠️  Role assignment failed - check if role exists$(NC)"; \
+		fi; \
+	fi
+	@echo "Assigning $(OPERATOR_ROLE) to $(OPERATOR_UPN)..."
+	@OPERATOR_USER_ID=$$(az ad user show --id "$(OPERATOR_UPN)" --query id -o tsv 2>/dev/null); \
+	if [ -n "$$OPERATOR_USER_ID" ]; then \
+		SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
+		RESOURCE_GROUP_SCOPE="/subscriptions/$$SUBSCRIPTION_ID/resourceGroups/$(RESOURCE_GROUP)"; \
+		if az role assignment create \
+			--assignee "$$OPERATOR_USER_ID" \
+			--role "$(OPERATOR_ROLE)" \
+			--scope "$$RESOURCE_GROUP_SCOPE" 2>/dev/null; then \
+			echo "$(GREEN)✅ Assigned $(OPERATOR_ROLE) to operator$(NC)"; \
+		else \
+			echo "$(YELLOW)⚠️  Role assignment failed - check if role exists$(NC)"; \
+		fi; \
+	fi
+
+# Complete setup
+.PHONY: setup-all
+setup-all: create-groups create-users assign-groups assign-roles ## Complete test user setup (recommended)
 	@echo ""
-	@echo "$(GREEN)✅ What you can do now:$(NC)"
-	@echo "  1. Continue with JHipster development"
-	@echo "  2. Use single-user testing (your account)"
-	@echo "  3. Implement OAuth2 integration"
-	@echo "  4. Build the application architecture"
-	@echo "  5. Create database schemas and services"
+	@echo "$(GREEN)🎉 Test users setup completed!$(NC)"
 	@echo ""
-	@echo "$(YELLOW)⚠️  What requires admin permissions:$(NC)"
-	@echo "  1. Creating multiple test users"
-	@echo "  2. Managing security groups"
-	@echo "  3. Azure AD role assignments"
+	@echo "$(BLUE)Created users:$(NC)"
+	@echo "  $(GREEN)Admin:$(NC)    $(ADMIN_UPN)"
+	@echo "  $(GREEN)Manager:$(NC)  $(MANAGER_UPN)"
+	@echo "  $(GREEN)Operator:$(NC) $(OPERATOR_UPN)"
 	@echo ""
-	@echo "$(BLUE)📞 Request from IT Admin:$(NC)"
-	@echo "  Subject: Azure AD Permissions for GENI Development"
-	@echo "  Roles needed: User Administrator, Groups Administrator, Application Administrator"
-	@echo "  Account: $(ADMIN_UPN)"
+	@echo "$(BLUE)Passwords:$(NC)"
+	@echo "  Admin: $(ADMIN_PASSWORD)"
+	@echo "  Manager: $(MANAGER_PASSWORD)"
+	@echo "  Operator: $(OPERATOR_PASSWORD)"
 	@echo ""
-	@echo "$(GREEN)🚀 Continue with: make continue-development$(NC)"
+	@echo "$(YELLOW)⚠️  Store these credentials securely!$(NC)"
+
+# List created users
+.PHONY: list-users
+list-users: set-subscription ## List all GENI test users
+	@echo "$(BLUE)📋 GENI Test Users:$(NC)"
+	@az ad user list --filter "startswith(userPrincipalName,'geni')" \
+		--query "[].{Name:displayName, UPN:userPrincipalName, Department:department, JobTitle:jobTitle}" \
+		--output table 2>/dev/null || echo "$(YELLOW)⚠️  No users found or insufficient permissions$(NC)"
+
+# Verify setup
+.PHONY: verify-setup
+verify-setup: set-subscription ## Verify complete user setup
+	@echo "$(BLUE)🔍 Verifying setup...$(NC)"
+	@echo ""
+	@echo "$(BLUE)Users:$(NC)"
+	@for user in "$(ADMIN_UPN)" "$(MANAGER_UPN)" "$(OPERATOR_UPN)"; do \
+		if az ad user show --id "$$user" >/dev/null 2>&1; then \
+			echo "$(GREEN)✅ $$user exists$(NC)"; \
+		else \
+			echo "$(RED)❌ $$user not found$(NC)"; \
+		fi; \
+	done
+	@echo ""
+	@echo "$(BLUE)Group memberships:$(NC)"
+	@for user in "$(ADMIN_UPN)" "$(MANAGER_UPN)" "$(OPERATOR_UPN)"; do \
+		echo "User: $$user"; \
+		GROUPS=$$(az ad user get-member-groups --id "$$user" --query "[].displayName" -o tsv 2>/dev/null); \
+		if [ -n "$$GROUPS" ]; then \
+			echo "$$GROUPS" | sed 's/^/  $(GREEN)✅ /'; \
+		else \
+			echo "$(YELLOW)  ⚠️  No groups found$(NC)"; \
+		fi; \
+		echo ""; \
+	done
+
+# Clean up - delete all test users
+.PHONY: cleanup
+cleanup: set-subscription ## Delete all GENI test users
+	@echo "$(YELLOW)⚠️  This will delete all GENI test users!$(NC)"
+	@echo "Press Ctrl+C to cancel, or Enter to continue..."
+	@read dummy
+	@echo "$(BLUE)🗑️  Deleting test users...$(NC)"
+	@for user in "$(ADMIN_UPN)" "$(MANAGER_UPN)" "$(OPERATOR_UPN)"; do \
+		if az ad user show --id "$$user" >/dev/null 2>&1; then \
+			echo "Deleting $$user..."; \
+			az ad user delete --id "$$user"; \
+			if [ $$? -eq 0 ]; then \
+				echo "$(GREEN)✅ Deleted $$user$(NC)"; \
+			else \
+				echo "$(RED)❌ Failed to delete $$user$(NC)"; \
+			fi; \
+		else \
+			echo "$(YELLOW)⚠️  User $$user not found$(NC)"; \
+		fi; \
+	done
+	@echo "$(GREEN)✅ Cleanup completed$(NC)"
+
+# Test basic functionality
+.PHONY: test
+test: set-subscription ## Test user creation (dry run)
+	@echo "$(BLUE)🧪 Testing Azure AD permissions...$(NC)"
+	@echo "Testing user creation permission..."
+	@az ad user create \
+		--display-name "Permission Test" \
+		--user-principal-name "permtest@$(AZURE_DOMAIN)" \
+		--password "TempTest123!" >/dev/null 2>&1; \
+	if [ $$? -eq 0 ]; then \
+		echo "$(GREEN)✅ User creation test passed$(NC)"; \
+		az ad user delete --id "permtest@$(AZURE_DOMAIN)" >/dev/null 2>&1; \
+		echo "$(GREEN)✅ Test user cleaned up$(NC)"; \
+	else \
+		echo "$(RED)❌ User creation test failed$(NC)"; \
+		echo "$(YELLOW)You may need additional permissions from your Azure AD administrator$(NC)"; \
+	fi
+
+# Show current Azure context
+.PHONY: context
+context: check-login ## Show current Azure context
+	@echo "$(BLUE)📋 Current Azure Context:$(NC)"
+	@echo "$(BLUE)User:$(NC) $$(az account show --query user.name -o tsv)"
+	@echo "$(BLUE)Subscription:$(NC) $$(az account show --query name -o tsv)"
+	@echo "$(BLUE)Tenant:$(NC) $$(az account show --query tenantId -o tsv)"
+	@echo "$(BLUE)Domain:$(NC) $(AZURE_DOMAIN)"
+	@echo "$(BLUE)Resource Group:$(NC) $(RESOURCE_GROUP)"
+
+# Clean up configuration file
+.PHONY: clean-config
+clean-config: ## Remove .env-user-creation configuration file
+	@echo "$(BLUE)🧹 Cleaning up configuration file...$(NC)"
+	@rm -f .env-user-creation
+	@echo "$(GREEN)✅ Configuration file removed$(NC)"
