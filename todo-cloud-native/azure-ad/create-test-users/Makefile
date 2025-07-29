@@ -288,6 +288,84 @@ assign-roles: ## Assign custom Azure roles to users
 		fi; \
 	fi
 
+# Unassign Azure roles
+.PHONY: unassign-roles
+unassign-roles: set-subscription ## Unassign custom Azure roles from users
+	@echo "$(BLUE)🎭 Unassigning Azure roles...$(NC)"
+	@SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
+	RESOURCE_GROUP_SCOPE="/subscriptions/$$SUBSCRIPTION_ID/resourceGroups/$(RESOURCE_GROUP)"; \
+	echo "Using scope: $$RESOURCE_GROUP_SCOPE"
+	@echo "Unassigning $(ADMIN_ROLE) from $(ADMIN_UPN)..."
+	@ADMIN_USER_ID=$$(az ad user show --id "$(ADMIN_UPN)" --query id -o tsv 2>/dev/null); \
+	if [ -n "$$ADMIN_USER_ID" ]; then \
+		SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
+		RESOURCE_GROUP_SCOPE="/subscriptions/$$SUBSCRIPTION_ID/resourceGroups/$(RESOURCE_GROUP)"; \
+		if az role assignment delete \
+			--assignee "$$ADMIN_USER_ID" \
+			--role "$(ADMIN_ROLE)" \
+			--scope "$$RESOURCE_GROUP_SCOPE" 2>/dev/null; then \
+			echo "$(GREEN)✅ Unassigned $(ADMIN_ROLE) from admin$(NC)"; \
+		else \
+			echo "$(YELLOW)⚠️  Role unassignment failed - assignment may not exist$(NC)"; \
+		fi; \
+	else \
+		echo "$(RED)❌ Admin user not found$(NC)"; \
+	fi
+	@echo "Unassigning $(MANAGER_ROLE) from $(MANAGER_UPN)..."
+	@MANAGER_USER_ID=$$(az ad user show --id "$(MANAGER_UPN)" --query id -o tsv 2>/dev/null); \
+	if [ -n "$$MANAGER_USER_ID" ]; then \
+		SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
+		RESOURCE_GROUP_SCOPE="/subscriptions/$$SUBSCRIPTION_ID/resourceGroups/$(RESOURCE_GROUP)"; \
+		if az role assignment delete \
+			--assignee "$$MANAGER_USER_ID" \
+			--role "$(MANAGER_ROLE)" \
+			--scope "$$RESOURCE_GROUP_SCOPE" 2>/dev/null; then \
+			echo "$(GREEN)✅ Unassigned $(MANAGER_ROLE) from manager$(NC)"; \
+		else \
+			echo "$(YELLOW)⚠️  Role unassignment failed - assignment may not exist$(NC)"; \
+		fi; \
+	else \
+		echo "$(RED)❌ Manager user not found$(NC)"; \
+	fi
+	@echo "Unassigning $(OPERATOR_ROLE) from $(OPERATOR_UPN)..."
+	@OPERATOR_USER_ID=$$(az ad user show --id "$(OPERATOR_UPN)" --query id -o tsv 2>/dev/null); \
+	if [ -n "$$OPERATOR_USER_ID" ]; then \
+		SUBSCRIPTION_ID=$$(az account show --query id -o tsv); \
+		RESOURCE_GROUP_SCOPE="/subscriptions/$$SUBSCRIPTION_ID/resourceGroups/$(RESOURCE_GROUP)"; \
+		if az role assignment delete \
+			--assignee "$$OPERATOR_USER_ID" \
+			--role "$(OPERATOR_ROLE)" \
+			--scope "$$RESOURCE_GROUP_SCOPE" 2>/dev/null; then \
+			echo "$(GREEN)✅ Unassigned $(OPERATOR_ROLE) from operator$(NC)"; \
+		else \
+			echo "$(YELLOW)⚠️  Role unassignment failed - assignment may not exist$(NC)"; \
+		fi; \
+	else \
+		echo "$(RED)❌ Operator user not found$(NC)"; \
+	fi
+	@echo "$(GREEN)🎉 Role unassignment process completed!$(NC)"
+
+.PHONY: list-role-assignments
+list-role-assignments: set-subscription ## List all GENI role assignments
+	@echo "$(BLUE)📋 GENI Role Assignments:$(NC)"
+	@echo "$(BLUE)Resource Group: $(RESOURCE_GROUP)$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Assignments by Role:$(NC)"
+	@for role in "$(ADMIN_ROLE)" "$(MANAGER_ROLE)" "$(OPERATOR_ROLE)"; do \
+		echo "$(BLUE)Role: $$role$(NC)"; \
+		az role assignment list --role "$$role" --resource-group "$(RESOURCE_GROUP)" --query '[].{User:principalName, Scope:scope}' --output table 2>/dev/null || echo "  No assignments found"; \
+		echo ""; \
+	done
+	@echo "$(YELLOW)Assignments by User:$(NC)"
+	@for user in "$(ADMIN_UPN)" "$(MANAGER_UPN)" "$(OPERATOR_UPN)"; do \
+		echo "$(BLUE)User: $$user$(NC)"; \
+		az role assignment list --assignee "$$user" --resource-group "$(RESOURCE_GROUP)" --query '[].{Role:roleDefinitionName, Scope:scope}' --output table 2>/dev/null || echo "  No assignments found"; \
+		echo ""; \
+	done
+	@echo ""
+	@echo "$(YELLOW)All GENI assignments in resource group:$(NC)"
+	@az role assignment list --resource-group "$(RESOURCE_GROUP)" --query "[?contains(roleDefinitionName, 'GENI')].{User:principalName, Role:roleDefinitionName, Scope:scope}" --output table 2>/dev/null || echo "No GENI assignments found"
+
 # Complete setup
 .PHONY: setup-all
 setup-all: create-groups create-users assign-groups assign-roles ## Complete test user setup (recommended)

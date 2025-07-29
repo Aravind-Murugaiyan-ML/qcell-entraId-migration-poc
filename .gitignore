@@ -13,3 +13,9 @@ todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/sr
 todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/src/main/resources/.h2.server.properties
 todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/.yo-rc.json
 todo-cloud-native/azure-ad/create-test-users/.env-user-creation
+todo-cloud-native/azure-ad/verifications/.donotCheckin
+todo-cloud-native/azure-ad/verifications/.env-az-verify-access
+
+todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/target/*
+
+todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/src/main/resources/config/.env
