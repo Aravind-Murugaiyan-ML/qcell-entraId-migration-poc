@@ -1,4 +1,0 @@
-org.springframework.test.context.ContextCustomizerFactory = mak.jhipster.doer.\
-    config.TestContainersSpringContextCustomizerFactory,mak.jhipster.doer.\
-    config.SqlTestContainersSpringContextCustomizerFactory,mak.jhipster.doer.\
-    config.KafkaTestContainersSpringContextCustomizerFactory

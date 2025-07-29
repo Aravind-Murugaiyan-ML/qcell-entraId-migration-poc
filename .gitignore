@@ -12,3 +12,4 @@ todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/sr
 .vscode/settings.json
 todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/src/main/resources/.h2.server.properties
 todo-cloud-native/azure-container-apps-jhipster-generated/todo/maktodogateway/.yo-rc.json
+todo-cloud-native/azure-ad/create-test-users/.env-user-creation
